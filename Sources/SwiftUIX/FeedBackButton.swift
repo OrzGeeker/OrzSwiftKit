@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-struct FeedBackButton: View {
+public struct FeedBackButton: View {
 
-    let email: String
+    public let email: String
 
-    let subject: String? = FeedBackButton.bugReportSubject
+    public let subject: String? = FeedBackButton.bugReportSubject
 
-    let content: String? = FeedBackButton.bugReportContentTemplate
+    public let content: String? = FeedBackButton.bugReportContentTemplate
 
     var mailToURL: URL? {
         var mailTo = "mailto:\(email)"
@@ -28,7 +28,7 @@ struct FeedBackButton: View {
         return URL(string: ret)
     }
 
-    var body: some View {
+    public var body: some View {
         Link(destination: mailToURL!, label: {
             ViewThatFits(in: .horizontal) {
                 HStack {
