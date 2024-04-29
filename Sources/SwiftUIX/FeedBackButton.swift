@@ -11,9 +11,17 @@ public struct FeedBackButton: View {
 
     public let email: String
 
-    public let subject: String? = FeedBackButton.bugReportSubject
+    public let subject: String?
 
-    public let content: String? = FeedBackButton.bugReportContentTemplate
+    public let content: String?
+
+    public init(email: String,
+                subject: String = FeedBackButton.bugReportSubject,
+                content: String = FeedBackButton.bugReportContentTemplate) {
+        self.email = email
+        self.subject = subject
+        self.content = content
+    }
 
     var mailToURL: URL? {
         var mailTo = "mailto:\(email)"
@@ -76,7 +84,7 @@ extension FeedBackButton {
 
     }()
 
-    static let bugReportSubject: String = {
+    public static let bugReportSubject: String = {
 
         var subject = "Bug Report"
 
@@ -98,7 +106,7 @@ extension FeedBackButton {
         return subject
     }()
 
-    static let bugReportContentTemplate = """
+    public static let bugReportContentTemplate = """
     🙏 Please provide the following information as much as possible:
 
         🐛 Bug Description:
