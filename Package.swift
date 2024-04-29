@@ -11,7 +11,7 @@ let package = Package(
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(name: "OrzSwiftKit", targets: ["OrzSwiftKit"]),
+        .library(name: "SwiftUIX", targets: ["SwiftUIX"]),
         .library(name: "JokerKits", targets: ["JokerKits"])
     ],
     dependencies: [
@@ -22,12 +22,11 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
-        .target(
-            name: "OrzSwiftKit"),
+        .target(name: "SwiftUIX"),
 
         .testTarget(
-            name: "OrzSwiftKitTests",
-            dependencies: ["OrzSwiftKit"]),
+            name: "SwiftUIXTests",
+            dependencies: ["SwiftUIX"]),
 
         .target(
             name: "JokerKits",

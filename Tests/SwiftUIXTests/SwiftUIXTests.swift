@@ -1,7 +1,7 @@
 import XCTest
-@testable import OrzSwiftKit
+@testable import SwiftUIX
 
-final class OrzSwiftKitTests: XCTestCase {
+final class SwiftUIXTests: XCTestCase {
     func testExample() throws {
         // XCTest Documentation
         // https://developer.apple.com/documentation/xctest
