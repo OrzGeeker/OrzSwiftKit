@@ -1,6 +1,6 @@
 //
 //  Platform.swift
-//  
+//
 //
 //  Created by joker on 2022/1/4.
 //
@@ -8,23 +8,35 @@
 /// [Swift条件编译参考](https://docs.swift.org/swift-book/ReferenceManual/Statements.html#//apple_ref/doc/uid/TP40014097-CH33-ID538)
 
 public enum Platform {
+    case macOS
+    case iOS
+    case tvOS
+    case watchOS
+    case visionOS
     case linux
-    case macosx
     case windows
     case unsupportedOS
-    
-    public static func os() -> Platform {
+
+    public static let os: Platform = {
 #if os(macOS)
-        return .macosx
-#elseif os(Windows)
-        return .windows
+        return .macOS
+#elseif os(iOS)
+        return .iOS
+#elseif os(tvOS)
+        return .tvOS
+#elseif os(watchOS)
+        return .watchOS
+#elseif os(visionOS)
+        return .visionOS
 #elseif os(Linux)
         return .linux
+#elseif os(Windows)
+        return .windows
 #else
         return .unsupportedOS
 #endif
-    }
-    
+    }()
+
     public enum Arch {
         case unknowned
         case i386
@@ -32,8 +44,8 @@ public enum Platform {
         case arm
         case arm64
     }
-    
-    public static func arch() -> Arch {
+
+    public static let arch: Arch = {
 #if arch(x86_64)
         return .x86_64
 #elseif arch(arm)
@@ -45,7 +57,7 @@ public enum Platform {
 #else
         return .unknowned
 #endif
-    }
+    }()
 }
 
 

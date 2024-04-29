@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Utils
 
 public struct FeedBackButton: View {
 
@@ -59,31 +60,6 @@ public struct FeedBackButton: View {
 
 extension FeedBackButton {
 
-    enum Platform: String {
-        case unknown
-        case macOS
-        case iOS
-        case tvOS
-        case watchOS
-        case visionOS
-    }
-
-    static let platform: Platform = {
-
-#if os(macOS)
-        return .macOS
-#elseif os(iOS)
-        return .iOS
-#elseif os(tvOS)
-        return .tvOS
-#elseif os(watchOS)
-        return .watchOS
-#elseif os(visionOS)
-        return .unknown
-#endif
-
-    }()
-
     public static let bugReportSubject: String = {
 
         var subject = "Bug Report"
@@ -101,7 +77,7 @@ extension FeedBackButton {
         }
 
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        subject.append(" - \(platform) \(osVersion)")
+        subject.append(" - \(Platform.os) \(osVersion)")
 
         return subject
     }()

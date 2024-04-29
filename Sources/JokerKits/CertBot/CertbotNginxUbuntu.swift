@@ -6,12 +6,13 @@
 //
 
 import Foundation
+import Utils
 
 public struct CertbotNginxUbuntu: Certbot {
     
     public static func cert() {
         
-        guard Platform.os() == .linux
+        guard Platform.os == .linux
         else {
             print("You should run this feature on Ubuntu Operating System!!!")
             return

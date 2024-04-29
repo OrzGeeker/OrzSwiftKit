@@ -12,7 +12,8 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(name: "SwiftUIX", targets: ["SwiftUIX"]),
-        .library(name: "JokerKits", targets: ["JokerKits"])
+        .library(name: "JokerKits", targets: ["JokerKits"]),
+        .library(name: "Utils", targets: ["Utils"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
@@ -23,22 +24,15 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(name: "SwiftUIX"),
-
-        .testTarget(
-            name: "SwiftUIXTests",
-            dependencies: ["SwiftUIX"]),
-
-        .target(
-            name: "JokerKits",
-            dependencies: [
-                .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux])),
-                "Alamofire",
-                .product(name: "ConsoleKit", package: "console-kit")
-            ]
-        ),
-        .testTarget(
-            name: "JokerKitsTests",
-            dependencies: ["JokerKits"]
-        )
+        .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX", "Utils"]),
+        .target(name: "JokerKits", dependencies: [
+            .product(name: "Crypto",
+                     package: "swift-crypto",
+                     condition: .when(platforms: [.linux])), "Alamofire",
+            .product(name: "ConsoleKit", package: "console-kit"),
+            "Utils"
+        ]),
+        .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits", "Utils"]),
+        .target(name: "Utils")
     ]
 )
