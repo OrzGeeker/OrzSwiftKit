@@ -16,9 +16,11 @@ public struct FeedBackButton: View {
 
     public let content: String?
 
-    public init(email: String,
-                subject: String = FeedBackButton.bugReportSubject,
-                content: String = FeedBackButton.bugReportContentTemplate) {
+    public init(
+        email: String,
+        subject: String = FeedBackButton.bugReportSubject,
+        content: String = FeedBackButton.bugReportContentTemplate
+    ) {
         self.email = email
         self.subject = subject
         self.content = content

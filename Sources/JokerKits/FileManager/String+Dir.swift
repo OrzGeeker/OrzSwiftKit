@@ -14,7 +14,7 @@ public extension String {
     
     func isDirPath() -> Bool {
         var isDir: ObjCBool = false
-        let _ =  FileManager.default.fileExists(atPath: self, isDirectory: &isDir)
+        _ =  FileManager.default.fileExists(atPath: self, isDirectory: &isDir)
         return isDir.boolValue
     }
     

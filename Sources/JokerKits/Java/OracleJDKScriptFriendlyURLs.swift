@@ -13,7 +13,7 @@ struct OracleJDKScriptFriendlyURLs {
     
     let type: `Type`
     
-    var semver: String? = nil
+    var semver: String?
     
     let os: OperatingSystems
     

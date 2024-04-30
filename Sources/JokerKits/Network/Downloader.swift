@@ -31,25 +31,24 @@ public struct DownloadItemInfo {
 }
 
 extension Array where Element == DownloadItemInfo {
-    public var asyncSequence: DownloadAsyncSequence { DownloadAsyncSequence(items: self) }
+    public struct DownloadAsyncIterator: AsyncIteratorProtocol {
+        var itemsIterator: IndexingIterator<[DownloadItemInfo]>
+        public mutating func next() async throws -> DownloadItemInfo? {
+            guard let item = itemsIterator.next()
+            else {
+                return nil
+            }
+            try await Downloader.download(item)
+            return item
+        }
+    }
     public struct DownloadAsyncSequence: AsyncSequence {
         let items: [DownloadItemInfo]
-        public typealias AsyncIterator = DownloadAsyncIterator
-        public struct DownloadAsyncIterator: AsyncIteratorProtocol {
-            var itemsIterator: IndexingIterator<[DownloadItemInfo]>
-            public mutating func next() async throws -> DownloadItemInfo? {
-                guard let item = itemsIterator.next()
-                else {
-                    return nil
-                }
-                try await Downloader.download(item)
-                return item
-            }
-        }
         public func makeAsyncIterator() -> DownloadAsyncIterator {
             return DownloadAsyncIterator(itemsIterator: self.items.makeIterator())
         }
     }
+    public var asyncSequence: DownloadAsyncSequence { DownloadAsyncSequence(items: self) }
 }
 
 public struct Downloader {
@@ -66,7 +65,7 @@ public struct Downloader {
     public static func download(_ item: DownloadItemInfo, progressBar: ActivityIndicator<ProgressBar>? = nil) async throws {
         progressBar?.start(refreshRate: 100)
         if let hash = item.hash, let hashType = item.hashType, item.dstFileURL.path.isExist() {
-            var hashValue: String? = nil
+            var hashValue: String?
             switch hashType {
             case .sha1:
                 hashValue = try item.dstFileURL.fileSHA1Value
@@ -102,7 +101,7 @@ public struct Downloader {
             }
 
             // 要显示进度时
-            if let progressBar  {
+            if let progressBar {
                 let total = items.count
                 var index = 0
                 progressBar.start(refreshRate: 100)
@@ -130,7 +129,7 @@ extension ActivityIndicator where A == ProgressBar {
         var title = self.activity.title.trimmingCharacters(in: .whitespacesAndNewlines)
         let range = NSRange(location: 0, length: title.count)
         let regex = try NSRegularExpression(pattern: "\\d+%$")
-        if let _ = regex.firstMatch(in: title, range: range) {
+        if regex.firstMatch(in: title, range: range) != nil {
             title = regex.stringByReplacingMatches(in: title, range: range, withTemplate: progressDesc)
         } else {
             title.append(" ")

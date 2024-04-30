@@ -22,7 +22,7 @@ public extension URL {
             let data = try Data(contentsOf: self)
             
 #if canImport(CommonCrypto)
-            var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
+            var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
             data.withUnsafeBytes {
                 _ = CC_SHA1($0.baseAddress, CC_LONG(data.count), &digest)
             }
@@ -43,7 +43,7 @@ public extension URL {
             }
             let data = try Data(contentsOf: self)
 #if canImport(CommonCrypto)
-            var digest = [UInt8](repeating: 0, count:Int(CC_SHA256_DIGEST_LENGTH))
+            var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
             data.withUnsafeBytes {
                 _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &digest)
             }

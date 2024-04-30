@@ -35,7 +35,7 @@ public extension Shell {
         ])
         let pids = output
             .components(separatedBy: .whitespacesAndNewlines)
-            .filter{ !$0.isEmpty }
+            .filter { !$0.isEmpty }
         return pids
     }
 }

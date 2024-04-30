@@ -57,14 +57,14 @@ public struct OracleJava {
             }
             sep
             Capture {
-                OneOrMore{
+                OneOrMore {
                     NegativeLookahead { sep }
                     CharacterClass.any
                 }
             }
             sep
             Capture {
-                OneOrMore{
+                OneOrMore {
                     NegativeLookahead { sep }
                     CharacterClass.any
                 }
@@ -74,9 +74,11 @@ public struct OracleJava {
         else {
             return nil
         }
-        return JDKInfo(version: String(jdk.2),
-                       type: String(jdk.1),
-                       date: String(jdk.3))
+        return JDKInfo(
+            version: String(jdk.2),
+            type: String(jdk.1),
+            date: String(jdk.3)
+        )
     }
     
     /// 获取当前设备上安装的所有JVM信息
@@ -95,7 +97,7 @@ public struct OracleJava {
             sep
             "("
             Capture {
-                OneOrMore{
+                OneOrMore {
                     NegativeLookahead { sep }
                     CharacterClass.any
                 }
@@ -104,7 +106,7 @@ public struct OracleJava {
             sep
             Capture {
                 "\""
-                OneOrMore{
+                OneOrMore {
                     NegativeLookahead { CharacterClass.newlineSequence}
                     CharacterClass.any
                 }
@@ -112,7 +114,7 @@ public struct OracleJava {
             }
             sep
             Capture {
-                OneOrMore{
+                OneOrMore {
                     NegativeLookahead { CharacterClass.newlineSequence }
                     CharacterClass.any
                 }
@@ -121,12 +123,14 @@ public struct OracleJava {
         var jdks = [JDKInfo]()
         allJavaInfo
             .matches(of: regex)
-            .compactMap{ $0.output }
+            .compactMap { $0.output }
             .forEach { output in
-                let jdk = JDKInfo(version: String(output.1),
-                                  arch: String(output.2),
-                                  path: String(output.4),
-                                  extra: String(output.3))
+                let jdk = JDKInfo(
+                    version: String(output.1),
+                    arch: String(output.2),
+                    path: String(output.4),
+                    extra: String(output.3)
+                )
                 jdks.append(jdk)
             }
         return jdks

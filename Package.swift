@@ -19,11 +19,14 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
         .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.1"),
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.1"),
+        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", branch: "main")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
-        .target(name: "SwiftUIX"),
+        .target(name: "SwiftUIX", plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
         .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX", "Utils"]),
         .target(name: "JokerKits", dependencies: [
             .product(name: "Crypto",
@@ -31,8 +34,12 @@ let package = Package(
                      condition: .when(platforms: [.linux])), "Alamofire",
             .product(name: "ConsoleKit", package: "console-kit"),
             "Utils"
+        ], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits", "Utils"]),
-        .target(name: "Utils")
+        .target(name: "Utils", plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ])
     ]
 )

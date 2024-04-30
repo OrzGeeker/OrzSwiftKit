@@ -26,13 +26,11 @@ extension JSONDecoder.KeyDecodingStrategy {
             let words = key.components(separatedBy: "-")
             let camelCased = words[0] + words[1...].map(\.capitalized).joined()
             return AnyCodingKey(stringValue: camelCased)!
-        }
-        else if key.contains("_") {
+        } else if key.contains("_") {
             let words = key.components(separatedBy: "_")
             let camelCased = words[0] + words[1...].map(\.capitalized).joined()
             return AnyCodingKey(stringValue: camelCased)!
-        }
-        else {
+        } else {
             return codingKey
         }
     }

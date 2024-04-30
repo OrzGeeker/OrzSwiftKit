@@ -40,14 +40,14 @@ public enum Platform {
     public enum Arch {
         case unknowned
         case i386
-        case x86_64
+        case x64
         case arm
         case arm64
     }
 
     public static let arch: Arch = {
 #if arch(x86_64)
-        return .x86_64
+        return .x64
 #elseif arch(arm)
         return .arm
 #elseif arch(arm64)
@@ -59,5 +59,3 @@ public enum Platform {
 #endif
     }()
 }
-
-

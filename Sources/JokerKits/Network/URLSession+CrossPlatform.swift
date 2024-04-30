@@ -18,7 +18,7 @@ public extension URLSession {
     static func dataTask(for request: URLRequest) async throws -> (Data, URLResponse) {
 #if canImport(FoundationNetworking)
         return await withCheckedContinuation({ continuation in
-            URLSession.shared.dataTask(with: request) { data, response, error in
+            URLSession.shared.dataTask(with: request) { data, response, _ in
                 guard let data = data, let response = response else {
                     fatalError()
                 }
