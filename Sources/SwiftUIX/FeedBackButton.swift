@@ -121,20 +121,20 @@ extension FeedBackButton {
 
 #Preview("Full Mode") {
     FeedBackButton(email: "824219521@qq.com")
-        .buttonStyle(BorderedProminentButtonStyle())
+        .buttonStyle(.borderedProminent)
         .padding()
 }
 
 #Preview("Text Only") {
     FeedBackButton(email: "824219521@qq.com")
         .frame(width: 150)
-        .buttonStyle(BorderedProminentButtonStyle())
+        .buttonStyle(.borderedProminent)
         .padding()
 }
 
 #Preview("Image Only") {
     FeedBackButton(email: "824219521@qq.com")
         .frame(width: 50)
-        .buttonStyle(BorderedProminentButtonStyle())
+        .buttonStyle(.borderedProminent)
         .padding()
 }

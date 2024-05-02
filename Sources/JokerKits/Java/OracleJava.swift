@@ -23,7 +23,7 @@ public enum JDK {
 }
 
 public struct JDKInfo {
-    let version: String
+    public let version: String
     var type: String?
     var date: String?
     var arch: String?
@@ -45,40 +45,22 @@ extension Substring {
 /// [Oracle JDK Script Friendly urls](https://www.oracle.com/java/technologies/jdk-script-friendly-urls/)
 public struct OracleJava {
     
+    public static let javaInstallationPageUrl = "https://www.oracle.com/cn/java/technologies/downloads/"
+    
     /// 获取当前系统安装的Java版本信息
     /// - Returns: 返回的Java版本信息
     static public func currentJDK() throws -> JDKInfo? {
-        let javaVersion = try Shell.runCommand(with: ["java", "--version"])
-        let sep = CharacterClass.whitespace
-        let regex = Regex {
-            OneOrMore(sep)
-            Capture {
-                OneOrMore(.word)
-            }
-            sep
-            Capture {
-                OneOrMore {
-                    NegativeLookahead { sep }
-                    CharacterClass.any
-                }
-            }
-            sep
-            Capture {
-                OneOrMore {
-                    NegativeLookahead { sep }
-                    CharacterClass.any
-                }
-            }
-        }
-        guard let jdk = javaVersion.firstMatch(of: regex)?.output
-        else {
+        let javaVersion = try Shell.runCommand(with: ["java", "--version"]).split(separator: .newlineSequence).first?.string
+        let components = javaVersion?.split(separator: .whitespace).map { $0.string.lowercased() }
+        if let components, components.count == 3 {
+            return JDKInfo(
+                version: components[1],
+                type: components[0],
+                date: components[2]
+            )
+        } else {
             return nil
         }
-        return JDKInfo(
-            version: String(jdk.2),
-            type: String(jdk.1),
-            date: String(jdk.3)
-        )
     }
     
     /// 获取当前设备上安装的所有JVM信息
