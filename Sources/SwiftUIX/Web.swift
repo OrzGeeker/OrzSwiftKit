@@ -12,6 +12,10 @@ public struct Web: View {
     
     public let url: URL
     
+    public init(url: URL) {
+        self.url = url
+    }
+    
     @StateObject var webViewStore = WebViewStore()
     
     @Environment(\.openURL) private var openURL
