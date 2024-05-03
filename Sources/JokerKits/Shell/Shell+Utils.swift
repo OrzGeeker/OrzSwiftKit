@@ -9,13 +9,23 @@
 import Foundation
 
 public extension Shell {
+    
+    enum SignalName: String {
+        case hangup = "HUP"
+        case interrupt = "INT"
+        case quit = "QUIT"
+        case abort = "ABRT"
+        case kill = "KILL"
+        case alarm = "ALRM"
+        case terminal = "TERM"
+    }
 
     @discardableResult
     /// 结束进程
     /// - Parameter pid: 进程PID
     /// - Returns: 是否结束成功
-    static func kill(with pid: String) async -> Bool {
-        let ret = await run(path: Executable.kill.binPath, args: ["-9", pid], silent: true)
+    static func kill(with pid: String, signalName: SignalName = .kill) async -> Bool {
+        let ret = await run(path: Executable.kill.binPath, args: ["-s", signalName.rawValue, pid], silent: true)
         return ret
     }
 

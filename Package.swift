@@ -19,6 +19,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
         .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.1"),
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.1"),
+        .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.0"),
         // 待[SwiftLint](https://github.com/realm/SwiftLint/blob/main/Package.swift)
         // 依赖 swift-argument-parser 版本 ~> 1.3.0 时可依赖
         //.package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", branch: "main")
@@ -26,7 +27,9 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
-        .target(name: "SwiftUIX", plugins: [
+        .target(name: "SwiftUIX", dependencies: [
+            .product(name: "WebView", package: "swiftui-webview")
+        ], plugins: [
             // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX", "Utils"]),
