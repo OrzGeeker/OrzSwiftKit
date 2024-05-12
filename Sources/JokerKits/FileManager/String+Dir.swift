@@ -21,4 +21,11 @@ public extension String {
     func isExist() -> Bool {
         return FileManager.default.fileExists(atPath: self)
     }
+    func remove() throws {
+        guard self.isExist()
+        else {
+            return
+        }
+        try FileManager.default.removeItem(atPath: self)
+    }
 }
