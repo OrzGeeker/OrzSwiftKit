@@ -28,11 +28,12 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(name: "SwiftUIX", dependencies: [
+            "Utils",
             .product(name: "WebView", package: "swiftui-webview")
         ], plugins: [
             // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
-        .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX", "Utils"]),
+        .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX"]),
         .target(name: "JokerKits", dependencies: [
             .product(name: "Crypto",
                      package: "swift-crypto",
@@ -42,7 +43,7 @@ let package = Package(
         ], plugins: [
             // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
-        .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits", "Utils"]),
+        .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits"]),
         .target(name: "Utils", plugins: [
             // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ])
