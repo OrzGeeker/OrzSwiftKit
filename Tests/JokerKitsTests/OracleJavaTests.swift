@@ -5,6 +5,7 @@
 //  Created by wangzhizhou on 2022/2/7.
 //
 
+#if os(macOS)
 import XCTest
 @testable import JokerKits
 
@@ -29,3 +30,4 @@ class OracleJavaTests: XCTestCase {
         }
     }
 }
+#endif

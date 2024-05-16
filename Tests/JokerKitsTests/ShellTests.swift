@@ -4,12 +4,12 @@
 //
 //  Created by joker on 2022/10/9.
 //
-
+#if os(macOS)
 import XCTest
 @testable import JokerKits
 
 final class ShellTests: XCTestCase {
-
+    
     func testShellSyncExecSuccess() throws {
         let ret = try Shell.runCommand(with: ["which", "ls"])
         XCTAssertEqual(ret, "/bin/ls\n")
@@ -42,3 +42,4 @@ final class ShellTests: XCTestCase {
         XCTAssert(!ret.isEmpty, "process not existed")
     }
 }
+#endif

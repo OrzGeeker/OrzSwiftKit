@@ -19,7 +19,9 @@ final class CertbotTests: XCTestCase {
     }
 
     func testExample() throws {
+#if os(macOS)
         _ = try "brew info".exec()
+#endif
     }
 
     func testPerformanceExample() throws {
