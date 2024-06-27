@@ -9,8 +9,8 @@ import Foundation
 import Alamofire
 import ConsoleKit
 
-public struct DownloadItemInfo {
-    
+public struct DownloadItemInfo: Sendable {
+
     public let sourceURL: URL
     public let dstFileURL: URL
     
@@ -24,7 +24,7 @@ public struct DownloadItemInfo {
         self.hashType = hashType
     }
     
-    public enum HashType {
+    public enum HashType: Sendable {
         case sha1
         case sha256
     }

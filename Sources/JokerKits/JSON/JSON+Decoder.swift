@@ -9,7 +9,7 @@ import Foundation
 
 extension JSONDecoder.KeyDecodingStrategy {
     
-    static var convertFromKebabCase: JSONDecoder.KeyDecodingStrategy = .custom { keys in
+    static let convertFromKebabCase: JSONDecoder.KeyDecodingStrategy = .custom { keys in
         let codingKey = keys.last!
         let key = codingKey.stringValue
         guard key.contains("-") else { return codingKey }
@@ -18,7 +18,7 @@ extension JSONDecoder.KeyDecodingStrategy {
         return AnyCodingKey(stringValue: camelCased)!
     }
     
-    static var convertFromKebabCaseOrSnakeCase: JSONDecoder.KeyDecodingStrategy = .custom { keys in
+    static let convertFromKebabCaseOrSnakeCase: JSONDecoder.KeyDecodingStrategy = .custom { keys in
         let codingKey = keys.last!
         let key = codingKey.stringValue
         

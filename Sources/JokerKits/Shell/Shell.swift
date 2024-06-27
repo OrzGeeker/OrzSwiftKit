@@ -30,7 +30,7 @@ public struct Shell {
     }
     
     @discardableResult
-    public static func runCommand(with args: [String], workDirectory: String? = nil, terminationHandler: ((Process) -> Void)? = nil) throws -> Process {
+    public static func runCommand(with args: [String], workDirectory: String? = nil, terminationHandler: (@Sendable (Process) -> Void)? = nil) throws -> Process {
         return try self.run(path: envPath, args: args, workDirectory: workDirectory, terminationHandler: terminationHandler)
     }
     
@@ -78,7 +78,7 @@ extension Shell {
     ///   - args: 命令参数数组
     ///   - workDirectory: 运行命令时所在的目录
     ///   - terminationHandler: 执行结果回调
-    public static func run(path: String, args: [String], workDirectory: String? = nil, terminationHandler: ((Process) -> Void)? = nil) throws -> Process {
+    public static func run(path: String, args: [String], workDirectory: String? = nil, terminationHandler: (@Sendable (Process) -> Void)? = nil) throws -> Process {
         let fileURL = URL(fileURLWithPath: path)
         let process = Process()
         process.executableURL = fileURL
@@ -87,7 +87,7 @@ extension Shell {
         if let workDirectory = workDirectory {
             process.currentDirectoryURL = URL(fileURLWithPath: workDirectory)
         }
-        process.terminationHandler =  terminationHandler
+        process.terminationHandler = terminationHandler
         try process.run()
         
         return process

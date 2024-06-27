@@ -7,7 +7,7 @@
 
 /// [Swift条件编译参考](https://docs.swift.org/swift-book/ReferenceManual/Statements.html#//apple_ref/doc/uid/TP40014097-CH33-ID538)
 
-public enum Platform {
+public enum Platform : Sendable {
     case macOS
     case iOS
     case tvOS
@@ -37,7 +37,7 @@ public enum Platform {
 #endif
     }()
 
-    public enum Arch {
+    public enum Arch : Sendable {
         case unknowned
         case i386
         case x64

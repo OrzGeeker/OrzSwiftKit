@@ -16,8 +16,8 @@ let package = Package(
         .library(name: "Utils", targets: ["Utils"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
-        .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.1"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.4.0"),
+        .package(url: "https://github.com/vapor/console-kit.git", from: "4.14.3"),
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.1"),
         .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.0"),
         // 待[SwiftLint](https://github.com/realm/SwiftLint/blob/main/Package.swift)
@@ -47,5 +47,6 @@ let package = Package(
         .target(name: "Utils", plugins: [
             // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ])
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )
