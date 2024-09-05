@@ -75,7 +75,7 @@ public struct FeedBackButton: View {
                 
             }
         }
-        .popover(isPresented: $isPresented) {
+        .popover(isPresented: $isPresented, attachmentAnchor: .point(.init(x: 0.5, y: -0.5))) {
             VStack(alignment: .leading, spacing: 15) {
                 if let larkChatLinkURL {
                     Link(destination: larkChatLinkURL, label: {
