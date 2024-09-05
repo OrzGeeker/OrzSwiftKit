@@ -11,6 +11,10 @@ public struct BuyMeCoffeeButton<PopoverContent>: View where PopoverContent: View
     
     public let content: PopoverContent
     
+    public init(content: PopoverContent) {
+        self.content = content
+    }
+    
     @State private var isPresented: Bool = false
     
     public var body: some View {
