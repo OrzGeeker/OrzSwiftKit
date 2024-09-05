@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-struct BuyMeCoffeeButton<PopoverContent>: View where PopoverContent: View {
+public struct BuyMeCoffeeButton<PopoverContent>: View where PopoverContent: View {
     
-    let content: PopoverContent
+    public let content: PopoverContent
     
     @State private var isPresented: Bool = false
     
-    var body: some View {
+    public var body: some View {
         Button {
             isPresented.toggle()
         } label: {
