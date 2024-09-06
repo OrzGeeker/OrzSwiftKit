@@ -21,13 +21,15 @@ public struct BuyMeCoffeeButton<PopoverContent>: View where PopoverContent: View
         Button {
             isPresented.toggle()
         } label: {
-            Label("Sponsor", systemImage: "heart")
+            Label("Sponsor", systemImage: isPresented ? "heart.fill" : "heart")
                 .labelStyle(.titleAndIcon)
                 .foregroundStyle(.pink)
                 .fontWeight(.semibold)
-                .padding([.top, .bottom], 2)
+                .padding(6)
         }
-        .buttonStyle(.bordered)
+        .disabled(isPresented)
+        .buttonStyle(.borderedProminent)
+        .tint(.gray)
         .popover(isPresented: $isPresented, attachmentAnchor: .point(.init(x: 0.5, y: -0.5))) {
             content
         }
