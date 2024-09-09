@@ -74,6 +74,7 @@ public struct FeedBackButton: View {
                 Image(systemName: "paperplane.fill")
                 
             }
+            .padding(4)
         }
         .disabled(isPresented)
         .popover(isPresented: $isPresented, attachmentAnchor: .point(.init(x: 0.5, y: -0.5))) {
@@ -164,7 +165,7 @@ extension FeedBackButton {
 
 #Preview("Text Only") {
     FeedBackButton(email: "824219521@qq.com")
-        .frame(width: 150)
+        .frame(width: 154)
         .buttonStyle(.borderedProminent)
         .padding()
 }
