@@ -7,45 +7,20 @@
 #if os(macOS)
 import Foundation
 import RegexBuilder
-public enum JDK {
-    case jdk17
-    
-    var downloadUrl: URL {
-        get async throws {
-            return URL(fileURLWithPath: ".")
-        }
-    }
-    
-    enum JDKError: Error {
-        case unsupportOS
-        case unsupportArch
-    }
-}
-
-public struct JDKInfo {
-    public let version: String
-    var type: String?
-    var date: String?
-    var arch: String?
-    var path: String?
-    var extra: String?
-}
-
-extension Substring {
-    
-    var string: String {
-        String(self)
-    }
-}
 
 /// JDK安装
-///
 /// [Oracle Java Installation Guide](https://docs.oracle.com/en/java/javase/17/install/index.html)
-///
 /// [Oracle JDK Script Friendly urls](https://www.oracle.com/java/technologies/jdk-script-friendly-urls/)
 public struct OracleJava {
     
-    public static let javaInstallationPageUrl = "https://www.oracle.com/cn/java/technologies/downloads/"
+    public struct JDKInfo {
+        public let version: String
+        var type: String?
+        var date: String?
+        var arch: String?
+        var path: String?
+        var extra: String?
+    }
     
     /// 获取当前系统安装的Java版本信息
     /// - Returns: 返回的Java版本信息
@@ -118,4 +93,12 @@ public struct OracleJava {
         return jdks
     }
 }
+
+extension Substring {
+    
+    var string: String {
+        String(self)
+    }
+}
+
 #endif
