@@ -38,7 +38,8 @@ let package = Package(
         .target(name: "JokerKits", dependencies: [
             .product(name: "Crypto",
                      package: "swift-crypto",
-                     condition: .when(platforms: [.linux])), "Alamofire",
+                     condition: .when(platforms: [.linux])),
+            .product(name: "Alamofire", package: "alamofire"),
             .product(name: "ConsoleKit", package: "console-kit"),
             "Utils"
         ], plugins: [
