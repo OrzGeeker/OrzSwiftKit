@@ -31,9 +31,5 @@
                 }
             }
         }
-
-        @Test func installJDK() async throws {
-
-        }
     }
 #endif

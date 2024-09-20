@@ -6,6 +6,7 @@
 //
 
 import Testing
+import Foundation
 
 @testable import JokerKits
 
@@ -42,5 +43,33 @@ struct OracleJDKScriptFriendlyURLsTests {
         #expect(
             jdk19_0_1.url
                 == "https://download.oracle.com/java/19/archive/jdk-19.0.1_linux-x64_bin.tar.gz")
+    }
+    
+    @Test
+    func sha256sum() async throws {
+        
+        let jdk22 = OracleJDKScriptFriendlyURLs(version: "22", type: .latest, os: .macos, arch: .aarch64, pkgOpt: .dmg)
+        
+        #expect(jdk22.url == "https://download.oracle.com/java/22/latest/jdk-22_macos-aarch64_bin.dmg")
+    
+        #expect(jdk22.sha256sum == "c0370183e3689fac4d44831c9e6a3e706510f05fd29b1f1cb0a4670e5721375d")
+        
+    }
+    
+    @Test
+    func downloadJDK() async throws {
+        let jdk = OracleJDKScriptFriendlyURLs(
+            version: "22",
+            type: .latest,
+            os: .macos,
+            arch: .aarch64,
+            pkgOpt: .dmg
+        )
+        let dstFileURL = try await jdk.download { progress in
+            let log = String(format: "downloading: %.2f %%", progress.fractionCompleted * 100)
+            print(log)
+        }
+        let fileURL = try #require(dstFileURL)
+        #expect(fileURL.isFileURL && fileURL.pathExtension == "dmg" && FileManager.default.fileExists(atPath: fileURL.path()))
     }
 }

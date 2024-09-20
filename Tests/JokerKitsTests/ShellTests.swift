@@ -23,9 +23,16 @@
         @Test
         func shellAsyncExecWithCallback() async throws {
             _ = try await confirmation("Shell Async Exec Completed") { confirmation in
-                try Shell.runCommand(with: ["which", "bash"]) { process in
-                    #expect(process.terminationStatus == 0)
-                    confirmation()
+                try await withCheckedThrowingContinuation { continuation in
+                    do {
+                        try Shell.runCommand(with: ["which", "bash"]) { process in
+                            #expect(process.terminationStatus == 0)
+                            confirmation()
+                            continuation.resume()
+                        }
+                    } catch let error {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
         }
