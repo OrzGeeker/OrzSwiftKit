@@ -6,28 +6,30 @@
 //
 
 #if os(macOS)
-import XCTest
-@testable import JokerKits
+    import Testing
+    @testable import JokerKits
+    import Foundation
 
-class OracleJavaTests: XCTestCase {
-    
-    func testCurrentJDK() throws {
-        let jdk = try OracleJava.currentJDK()
-        XCTAssertNotNil(jdk, "No JDK installed!")
-        if let jdk = jdk {
-            XCTAssertFalse(jdk.version.isEmpty, "jdk version invalid")
+    class OracleJavaTests {
+        @Test
+        func testCurrentJDK() throws {
+            let jdk = try OracleJava.currentJDK()
+            try #require(jdk, "No JDK installed!")
+            if let jdk {
+                #expect(jdk.version.isEmpty == false, "jdk version invalid")
+            }
         }
-    }
-    
-    func testInstalledJDKs() throws {
-        let jdks = try OracleJava.installedJDKs()
-        XCTAssertFalse(jdks.isEmpty, "No JDK installed!")
-        jdks.forEach { jdk in
-            XCTAssertFalse(jdk.version.isEmpty, "jdk version invalid")
-            if let jdkPath = jdk.path {
-                XCTAssertTrue(FileManager.default.fileExists(atPath: jdkPath), "jdk path invalid")
+
+        @Test
+        func testInstalledJDKs() throws {
+            let jdks = try OracleJava.installedJDKs()
+            try #require(jdks.isEmpty == false, "No JDK installed!")
+            jdks.forEach { jdk in
+                #expect(jdk.version.isEmpty == false, "jdk version invalid")
+                if let jdkPath = jdk.path {
+                    #expect(FileManager.default.fileExists(atPath: jdkPath), "jdk path invalid")
+                }
             }
         }
     }
-}
 #endif

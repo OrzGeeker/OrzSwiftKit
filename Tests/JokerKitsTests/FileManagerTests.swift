@@ -1,95 +1,101 @@
 //
 //  FileManagerTests.swift
-//  
+//
 //
 //  Created by joker on 2022/10/9.
 //
 
-import XCTest
+import Foundation
+import Testing
+
 @testable import JokerKits
 
-final class FileManagerTests: XCTestCase {
-    
+@Suite
+class FileManagerTests {
+
     private let tempTestDir = NSString.path(withComponents: [
         NSTemporaryDirectory(),
-        "test"
+        "test",
+        UUID().uuidString,
     ])
-    
+
     private func deleteTempTestDirIfExist() throws {
         // 如果有之前用过的测试目录，先删除
         if tempTestDir.isDirPath() {
             try FileManager.default.removeItem(atPath: tempTestDir)
         }
     }
-    
-    override func setUpWithError() throws {
+
+    init() throws {
         try deleteTempTestDirIfExist()
     }
 
-    override func tearDownWithError() throws {
-        try deleteTempTestDirIfExist()
+    deinit {
+        try? deleteTempTestDirIfExist()
     }
-    
-    
+
+    @Test
     func testMakeDir() throws {
         let path = NSString.path(withComponents: [
             tempTestDir,
-            "dir"
+            "dir",
         ])
         try path.makeDirIfNeed()
-        XCTAssertTrue(path.isDirPath())
+        #expect(path.isDirPath(), "make dir failed!")
     }
-    
+
+    @Test
     func testMoveDir() throws {
         let originPath = NSString.path(withComponents: [
             tempTestDir,
-            "origin"
+            "origin",
         ])
         try originPath.makeDirIfNeed()
-        
+
         let targetPath = NSString.path(withComponents: [
             tempTestDir,
-            "target"
+            "target",
         ])
-        
+
         try FileManager.moveFile(fromFilePath: originPath, toFilePath: targetPath, overwrite: true)
-        XCTAssertFalse(originPath.isExist())
-        XCTAssertTrue(targetPath.isExist() && targetPath.isDirPath())
+        #expect(!originPath.isExist())
+        #expect(targetPath.isExist() && targetPath.isDirPath())
     }
 
+    @Test
     func testAllSubDir() throws {
-        try ["first","second"]
+        try ["first", "second"]
             .map { NSString.path(withComponents: [tempTestDir, $0]) }
             .forEach { try $0.makeDirIfNeed() }
-        
+
         let dirs = try FileManager.allSubDir(in: tempTestDir)
-        XCTAssertTrue(dirs?.count == 2)
+        #expect(dirs?.count == 2)
     }
 
+    @Test
     func testAllFiles() throws {
         let notExistTxtDir = NSString.path(withComponents: [
             tempTestDir,
-            "noTxtDir"
+            "noTxtDir",
         ])
         try notExistTxtDir.makeDirIfNeed()
-        
-        let noTxtFiles = FileManager.allFiles(in: notExistTxtDir, ext: "txt")
-        XCTAssertTrue(noTxtFiles?.count == 0)
-        
 
+        let noTxtFiles = FileManager.allFiles(in: notExistTxtDir, ext: "txt")
+        #expect(noTxtFiles?.count == 0)
 
         let existTxtDir = NSString.path(withComponents: [
             tempTestDir,
-            "txtDir"
+            "txtDir",
         ])
         try existTxtDir.makeDirIfNeed()
         let txtFilePath = NSString.path(withComponents: [
             existTxtDir,
-            "txtTestFile.txt"
+            "txtTestFile.txt",
         ])
-        FileManager.default.createFile(atPath: txtFilePath, contents: "Just A Test File".data(using: .utf8))
+        FileManager.default.createFile(
+            atPath: txtFilePath, contents: "Just A Test File".data(using: .utf8))
 
         let txtFiles = FileManager.allFiles(in: existTxtDir, ext: "txt")
-        XCTAssertTrue(txtFiles!.count == 1)
+        #expect(txtFiles?.count == 1)
     }
 }
