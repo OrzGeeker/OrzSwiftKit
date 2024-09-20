@@ -12,7 +12,7 @@ import Testing
 struct OracleJDKScriptFriendlyURLsTests {
 
     @Test
-    func testJDKUrl() throws {
+    func JDKUrl() throws {
 
         let jdk19 = OracleJDKScriptFriendlyURLs(
             version: "19", type: .latest, os: .linux, arch: .x64, pkgOpt: .targz)

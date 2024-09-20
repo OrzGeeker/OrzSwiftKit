@@ -31,7 +31,7 @@ struct JSONTests {
         """
 
     @Test
-    func testJSONEncoder() throws {
+    func JSONEncoder() throws {
 
         let data = try JSON.encoder.encode(model)
 
@@ -41,7 +41,7 @@ struct JSONTests {
     }
 
     @Test
-    func testJSONDecoder() throws {
+    func JSONDecoder() throws {
 
         let jsonString = """
             {
@@ -59,7 +59,7 @@ struct JSONTests {
     }
 
     @Test
-    func testJSONRepresentable() throws {
+    func JSONRepresentable() throws {
         #expect(try model.jsonRepresentation() == encodeModelJson)
     }
 }

@@ -10,7 +10,7 @@ import Testing
 @testable import JokerKits
 
 @Test
-func testExample() throws {
+func example() throws {
     #if os(macOS)
         _ = try "brew info".exec()
     #endif

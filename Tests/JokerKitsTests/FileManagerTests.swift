@@ -35,7 +35,7 @@ class FileManagerTests {
     }
 
     @Test
-    func testMakeDir() throws {
+    func makeDir() throws {
         let path = NSString.path(withComponents: [
             tempTestDir,
             "dir",
@@ -45,7 +45,7 @@ class FileManagerTests {
     }
 
     @Test
-    func testMoveDir() throws {
+    func moveDir() throws {
         let originPath = NSString.path(withComponents: [
             tempTestDir,
             "origin",
@@ -63,7 +63,7 @@ class FileManagerTests {
     }
 
     @Test
-    func testAllSubDir() throws {
+    func allSubDir() throws {
         try ["first", "second"]
             .map { NSString.path(withComponents: [tempTestDir, $0]) }
             .forEach { try $0.makeDirIfNeed() }
@@ -73,7 +73,7 @@ class FileManagerTests {
     }
 
     @Test
-    func testAllFiles() throws {
+    func allFiles() throws {
         let notExistTxtDir = NSString.path(withComponents: [
             tempTestDir,
             "noTxtDir",

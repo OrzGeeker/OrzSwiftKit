@@ -12,16 +12,16 @@
 
     class OracleJavaTests {
         @Test
-        func testCurrentJDK() throws {
+        func currentJDK() throws {
             let jdk = try OracleJava.currentJDK()
-            try #require(jdk, "No JDK installed!")
+            _ = try #require(jdk, "No JDK installed!")
             if let jdk {
                 #expect(jdk.version.isEmpty == false, "jdk version invalid")
             }
         }
 
         @Test
-        func testInstalledJDKs() throws {
+        func installedJDKs() throws {
             let jdks = try OracleJava.installedJDKs()
             try #require(jdks.isEmpty == false, "No JDK installed!")
             jdks.forEach { jdk in
@@ -30,6 +30,10 @@
                     #expect(FileManager.default.fileExists(atPath: jdkPath), "jdk path invalid")
                 }
             }
+        }
+
+        @Test func installJDK() async throws {
+
         }
     }
 #endif
