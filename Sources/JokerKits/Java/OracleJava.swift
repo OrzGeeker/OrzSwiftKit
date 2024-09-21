@@ -7,6 +7,7 @@
 #if os(macOS)
 import Foundation
 import RegexBuilder
+import Utils
 
 /// JDK安装
 /// [Oracle Java Installation Guide](https://docs.oracle.com/en/java/javase/17/install/index.html)
@@ -92,6 +93,33 @@ public struct OracleJava {
             }
         return jdks
     }
+    
+    static public func downloadJDK(_ version: String, dstFileURL: URL? = nil, progressHandler: ((Progress) -> Void)? = nil) async throws -> URL? {
+        
+        guard Platform.os == .macOS
+        else {
+            return nil
+        }
+        
+        var arch: OracleJDKScriptFriendlyURLs.Architecture = .aarch64
+        switch Platform.arch {
+        case .arm64:
+            arch = .aarch64
+        case .x64:
+            arch = .x64
+        default:
+            return nil
+        }
+        
+        return try await OracleJDKScriptFriendlyURLs(
+            version: version,
+            type: .latest,
+            os: .macos,
+            arch: arch,
+            pkgOpt: .dmg
+        )
+        .download(to: dstFileURL, progressHandler: progressHandler, validation: true)
+    }
 }
 
 extension Substring {
@@ -100,5 +128,4 @@ extension Substring {
         String(self)
     }
 }
-
 #endif
