@@ -32,10 +32,9 @@
             }
         }
         
-        @MainActor
         @Test func downloadJDK() async throws {
             let fileURL = try #require(try await OracleJava.downloadJDK("22") { progress in
-                let log = String(format: "downloading: %.2f %%", progress.fractionCompleted * 100)
+                let log = String(format: "downloading: %.2f %%", progress * 100)
                 print(log)
             }, "下载失败")
             #expect(fileURL.isFileURL && fileURL.pathExtension == "dmg" && FileManager.default.fileExists(atPath: fileURL.path()))
