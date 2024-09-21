@@ -73,7 +73,7 @@ struct OracleJDKScriptFriendlyURLs {
 import CryptoKit
 extension OracleJDKScriptFriendlyURLs {
     
-    func download(to dst: URL? = nil, progressHandler: ((Progress) -> Void)? = nil, validation: Bool = true) async throws -> URL? {
+    func download(to dst: URL? = nil, progressHandler: ((Progress) async -> Void)? = nil, validation: Bool = true) async throws -> URL? {
         
         guard let jdkURL = URL(string: self.url)
         else {
@@ -84,7 +84,7 @@ extension OracleJDKScriptFriendlyURLs {
         let (downloadURLTask, downloadProgressStream) = Downloader.download(jdkURL)
         if let progressHandler {
             for try await progress in downloadProgressStream {
-                progressHandler(progress)
+                await progressHandler(progress)
             }
         }
         

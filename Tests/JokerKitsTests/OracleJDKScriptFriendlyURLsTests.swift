@@ -55,7 +55,7 @@ struct OracleJDKScriptFriendlyURLsTests {
         #expect(jdk22.sha256sum == "c0370183e3689fac4d44831c9e6a3e706510f05fd29b1f1cb0a4670e5721375d")
         
     }
-    
+    @MainActor
     @Test
     func downloadJDK() async throws {
         let jdk = OracleJDKScriptFriendlyURLs(

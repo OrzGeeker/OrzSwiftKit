@@ -32,6 +32,7 @@
             }
         }
         
+        @MainActor
         @Test func downloadJDK() async throws {
             let fileURL = try #require(try await OracleJava.downloadJDK("22") { progress in
                 let log = String(format: "downloading: %.2f %%", progress.fractionCompleted * 100)
