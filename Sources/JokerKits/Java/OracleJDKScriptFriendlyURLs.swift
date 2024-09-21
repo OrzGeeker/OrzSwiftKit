@@ -73,7 +73,7 @@ struct OracleJDKScriptFriendlyURLs {
 import CryptoKit
 extension OracleJDKScriptFriendlyURLs {
     
-    func download(to dst: URL? = nil, progressHandler: ((Double) -> Void)? = nil, validation: Bool = true) async throws -> URL? {
+    func download(to dst: URL? = nil, progressHandler: (@Sendable (Double) -> Void)? = nil, validation: Bool = true) async throws -> URL? {
         
         guard let jdkURL = URL(string: self.url)
         else {
