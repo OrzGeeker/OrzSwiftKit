@@ -94,7 +94,7 @@ public struct OracleJava {
         return jdks
     }
     
-    static public func downloadJDK(_ version: String, dstFileURL: URL? = nil, progressHandler: (@Sendable (Double) -> Void)? = nil) async throws -> URL? {
+    static public func downloadJDK(_ version: String, dstFileURL: URL? = nil, progressHandler: (@Sendable (Double) async -> Void)? = nil) async throws -> URL? {
         
         guard Platform.os == .macOS
         else {
