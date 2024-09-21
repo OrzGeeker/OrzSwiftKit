@@ -65,7 +65,8 @@ struct OracleJDKScriptFriendlyURLsTests {
             arch: .aarch64,
             pkgOpt: .dmg
         )
-        let dstFileURL = try await jdk.download { progress in
+        let downloadURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
+        let dstFileURL = try await jdk.download(to: downloadURL) { progress in
             let log = String(format: "downloading: %.2f %%", progress.fractionCompleted * 100)
             print(log)
         }

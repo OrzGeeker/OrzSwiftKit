@@ -106,7 +106,7 @@ extension OracleJDKScriptFriendlyURLs {
         let localFileURL = URL(filePath: jdkLocalFilePath)
         var dstFileURL = localFileURL.deletingLastPathComponent().appending(component: jdkURL.lastPathComponent)
         if let dst {
-            dstFileURL = dst.isFileURL ? dst : dst.appending(component: jdkURL.lastPathComponent)
+            dstFileURL = dst.path().isDirPath() ? dst.appending(component: jdkURL.lastPathComponent) : dst
         }
         try FileManager.moveFile(fromFilePath: localFileURL.path, toFilePath: dstFileURL.path, overwrite: true)
         
