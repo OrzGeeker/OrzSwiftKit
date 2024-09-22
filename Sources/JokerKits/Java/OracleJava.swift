@@ -28,7 +28,7 @@ public struct OracleJava {
     static public func currentJDK() throws -> JDKInfo? {
         let javaVersion = try Shell.runCommand(with: ["java", "--version"]).split(separator: .newlineSequence).first?.string
         let components = javaVersion?.split(separator: .whitespace).map { $0.string.lowercased() }
-        if let components, components.count == 3 {
+        if let components, components.count >= 3 {
             return JDKInfo(
                 version: components[1],
                 type: components[0],
