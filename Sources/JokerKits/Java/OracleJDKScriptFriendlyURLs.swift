@@ -58,15 +58,23 @@ struct OracleJDKScriptFriendlyURLs {
     
     var sha256sum: String? {
         
-        guard let sha256URL = URL(string: sha256Url),
-              let sha256sumData = try? Data(contentsOf: sha256URL)
-        else {
-            return nil
+        get async throws {
+            
+            guard let sha256URL = URL(string: sha256Url)
+            else {
+                return nil
+            }
+            
+            let (sha256sumData, response) = try await URLSession.dataTask(for: URLRequest(url: sha256URL))
+            guard (response as? HTTPURLResponse)?.statusCode == 200
+            else {
+                return nil
+            }
+            
+            let sha256sum = String(data: sha256sumData, encoding: .utf8)
+            
+            return sha256sum
         }
-        
-        let sha256sum = String(data: sha256sumData, encoding: .utf8)
-        
-        return sha256sum
     }
 }
 
@@ -96,7 +104,8 @@ extension OracleJDKScriptFriendlyURLs {
             let jdkData = try Data(contentsOf: jdkFileURL)
             let digest = SHA256.hash(data: jdkData)
             let computedSHA256Sum = digest.compactMap { String(format: "%02x", $0) }.joined()
-            guard computedSHA256Sum == self.sha256sum
+            let sha256sum = try await self.sha256sum
+            guard computedSHA256Sum == sha256sum
             else {
                 return nil
             }
