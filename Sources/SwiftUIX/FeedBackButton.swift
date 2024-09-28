@@ -81,22 +81,15 @@ public struct FeedBackButton: View {
             .padding(4)
         }
         .disabled(isPresented)
-        .popover(isPresented: $isPresented, attachmentAnchor: .point(.init(x: 0.5, y: -0.5))) {
-            VStack(alignment: .leading, spacing: 15) {
-                if let larkChatLinkURL {
-                    Link(destination: larkChatLinkURL, label: {
-                        Label("Lark Chat", systemImage: "message")
-                    })
-                }
-                if let mailToURL {
-                    Link(destination: mailToURL, label: {
-                        Label("Send Email", systemImage: "envelope")
-                    })
-                }
-            }
-            .padding()
+#if os(iOS)
+        .confirmationDialog("Feedback To Author", isPresented: $isPresented) {
+            FeedBackOptionView(larkChatLinkURL: larkChatLinkURL, mailToURL: mailToURL)
         }
-        
+#else
+        .popover(isPresented: $isPresented, attachmentAnchor: .point(.init(x: 0.5, y: -0.5))) {
+            FeedBackOptionView(larkChatLinkURL: larkChatLinkURL, mailToURL: mailToURL)
+        }
+#endif
     }
 }
 
@@ -159,6 +152,29 @@ extension FeedBackButton {
     👨🏻‍💻 I will fix this problem as soon as possible.
     
     """
+}
+
+struct FeedBackOptionView: View {
+
+    var larkChatLinkURL: URL?
+    
+    var mailToURL: URL?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            if let larkChatLinkURL {
+                Link(destination: larkChatLinkURL, label: {
+                    Label("Lark Chat", systemImage: "message")
+                })
+            }
+            if let mailToURL {
+                Link(destination: mailToURL, label: {
+                    Label("Send Email", systemImage: "envelope")
+                })
+            }
+        }
+        .padding()
+    }
 }
 
 #Preview("Full Mode") {
