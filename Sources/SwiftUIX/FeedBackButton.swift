@@ -10,7 +10,7 @@ import Utils
 
 public struct FeedBackButton: View {
     
-    public let email: String
+    public let email: String?
     
     public let subject: String?
     
@@ -22,7 +22,7 @@ public struct FeedBackButton: View {
     
     
     public init(
-        email: String,
+        email: String? = nil,
         subject: String? = bugReportSubject,
         content: String? = bugReportContentTemplate,
         larkChatLink: String? = defaultLarkFeedbackGroupLink
@@ -34,6 +34,10 @@ public struct FeedBackButton: View {
     }
     
     var mailToURL: URL? {
+        guard let email
+        else {
+            return nil
+        }
         var mailTo = "mailto:\(email)"
         if let subject {
             mailTo.append("?subject=\(subject)")
@@ -173,6 +177,19 @@ extension FeedBackButton {
 #Preview("Image Only") {
     FeedBackButton(email: "824219521@qq.com")
         .frame(width: 50)
+        .buttonStyle(.borderedProminent)
+        .padding()
+}
+
+#Preview("Lark Feedback Only") {
+    FeedBackButton()
+        .buttonStyle(.borderedProminent)
+        .padding()
+}
+
+#Preview("Email Feedback Only") {
+    FeedBackButton(email: "824219521@qq.com",
+                   larkChatLink: nil)
         .buttonStyle(.borderedProminent)
         .padding()
 }
