@@ -16,10 +16,10 @@ let package = Package(
         .library(name: "Utils", targets: ["Utils"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.7.1"),
-        .package(url: "https://github.com/vapor/console-kit.git", from: "4.15.0"),
-        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.9.1"),
-        .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.0"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.12.2"),
+        .package(url: "https://github.com/vapor/console-kit.git", from: "4.15.2"),
+        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.2"),
+        .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.3")
         // 待[SwiftLint](https://github.com/realm/SwiftLint/blob/main/Package.swift)
         // 依赖 swift-argument-parser 版本 ~> 1.3.0 时可依赖
