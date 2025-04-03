@@ -11,6 +11,8 @@ import Foundation
 @testable import JokerKits
 
 struct OracleJDKScriptFriendlyURLsTests {
+    
+    private let jdkVersion = "24"
 
     @Test
     func JDKUrl() throws {
@@ -47,19 +49,18 @@ struct OracleJDKScriptFriendlyURLsTests {
     
     @Test
     func sha256sum() async throws {
+        let jdk = OracleJDKScriptFriendlyURLs(version: jdkVersion, type: .latest, os: .macos, arch: .aarch64, pkgOpt: .dmg)
         
-        let jdk22 = OracleJDKScriptFriendlyURLs(version: "22", type: .latest, os: .macos, arch: .aarch64, pkgOpt: .dmg)
-        
-        #expect(jdk22.url == "https://download.oracle.com/java/22/latest/jdk-22_macos-aarch64_bin.dmg")
+        #expect(jdk.url == "https://download.oracle.com/java/\(jdkVersion)/latest/jdk-\(jdkVersion)_macos-aarch64_bin.dmg")
     
-        #expect(try await jdk22.sha256sum == "c0370183e3689fac4d44831c9e6a3e706510f05fd29b1f1cb0a4670e5721375d")
+        #expect(try await jdk.sha256sum == "009695152a1f6d967f1f3488fd7f26761f31601ea85e5dfea4d83e4aa2c36289")
         
     }
 
     @Test
     func downloadJDK() async throws {
         let jdk = OracleJDKScriptFriendlyURLs(
-            version: "22",
+            version: jdkVersion,
             type: .latest,
             os: .macos,
             arch: .aarch64,

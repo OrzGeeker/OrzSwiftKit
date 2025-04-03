@@ -32,8 +32,10 @@
             }
         }
         
-        @Test func downloadJDK() async throws {
-            let fileURL = try #require(try await OracleJava.downloadJDK("22") { progress in
+        @Test
+        func downloadJDK() async throws {
+            let jdkVersion = "24"
+            let fileURL = try #require(try await OracleJava.downloadJDK(jdkVersion) { progress in
                 let log = String(format: "downloading: %.2f %%", progress * 100)
                 print(log)
             }, "下载失败")
