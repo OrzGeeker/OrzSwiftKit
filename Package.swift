@@ -10,29 +10,24 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(name: "SwiftUIX", targets: ["SwiftUIX"]),
         .library(name: "JokerKits", targets: ["JokerKits"]),
         .library(name: "Utils", targets: ["Utils"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.12.2"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.12.3"),
         .package(url: "https://github.com/vapor/console-kit.git", from: "4.15.2"),
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.2"),
         .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.1"),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.3")
-        // 待[SwiftLint](https://github.com/realm/SwiftLint/blob/main/Package.swift)
-        // 依赖 swift-argument-parser 版本 ~> 1.3.0 时可依赖
-        //.package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", branch: "main")
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.5"),
+        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.4"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(name: "SwiftUIX", dependencies: [
             "Utils",
             .product(name: "WebView", package: "swiftui-webview")
         ], plugins: [
-            // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX"]),
         .target(name: "JokerKits", dependencies: [
@@ -43,11 +38,11 @@ let package = Package(
             .product(name: "ConsoleKit", package: "console-kit"),
             "Utils"
         ], plugins: [
-            // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits"]),
         .target(name: "Utils", plugins: [
-            // .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ])
     ]
 )

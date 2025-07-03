@@ -53,7 +53,7 @@ struct OracleJDKScriptFriendlyURLsTests {
         
         #expect(jdk.url == "https://download.oracle.com/java/\(jdkVersion)/latest/jdk-\(jdkVersion)_macos-aarch64_bin.dmg")
     
-        #expect(try await jdk.sha256sum == "009695152a1f6d967f1f3488fd7f26761f31601ea85e5dfea4d83e4aa2c36289")
+        #expect(try await jdk.sha256sum == "a67402572b2ce39f6fda56d700a8d2883630ec7bb1ea6b35bdd098b0d5d0a646")
         
     }
 

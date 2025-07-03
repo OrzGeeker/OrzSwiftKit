@@ -78,7 +78,6 @@ public struct FeedBackButton: View {
                 Image(systemName: "paperplane.fill")
                 
             }
-            .padding(4)
         }
         .disabled(isPresented)
 #if os(iOS)
@@ -155,7 +154,7 @@ extension FeedBackButton {
 }
 
 struct FeedBackOptionView: View {
-
+    
     var larkChatLinkURL: URL?
     
     var mailToURL: URL?
@@ -204,8 +203,10 @@ struct FeedBackOptionView: View {
 }
 
 #Preview("Email Feedback Only") {
-    FeedBackButton(email: "824219521@qq.com",
-                   larkChatLink: nil)
-        .buttonStyle(.borderedProminent)
-        .padding()
+    FeedBackButton(
+        email: "824219521@qq.com",
+        larkChatLink: nil
+    )
+    .buttonStyle(.borderedProminent)
+    .padding()
 }

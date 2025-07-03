@@ -7,7 +7,7 @@
 
 /// [Swift条件编译参考](https://docs.swift.org/swift-book/ReferenceManual/Statements.html#//apple_ref/doc/uid/TP40014097-CH33-ID538)
 
-public enum Platform : Sendable {
+public enum Platform: Sendable {
     case macOS
     case iOS
     case tvOS
@@ -16,7 +16,7 @@ public enum Platform : Sendable {
     case linux
     case windows
     case unsupportedOS
-
+    
     public static let os: Platform = {
 #if os(macOS)
         return .macOS
@@ -36,15 +36,15 @@ public enum Platform : Sendable {
         return .unsupportedOS
 #endif
     }()
-
-    public enum Arch : Sendable {
+    
+    public enum Arch: Sendable {
         case unknowned
         case i386
         case x64
         case arm
         case arm64
     }
-
+    
     public static let arch: Arch = {
 #if arch(x86_64)
         return .x64
