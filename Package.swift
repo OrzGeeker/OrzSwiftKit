@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.2"),
         .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.5"),
-        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.5"),
+        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.6"),
     ],
     targets: [
         .target(name: "SwiftUIX", dependencies: [

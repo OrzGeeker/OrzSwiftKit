@@ -1,5 +1,5 @@
 {
-  "originHash" : "334b7cbba7a5fd9b47827e9fdd343be743d1ec6f743584409b11363b63a8fbe4",
+  "originHash" : "0b24e4cb27813017c77e510a82abf59345e27dfcbfe20ea03eb12849a1ed40c4",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OrzGeeker/OrzSwiftLint.git",
       "state" : {
-        "revision" : "e29eab9652a0cf512ac412e9daf42b162f42c825",
-        "version" : "0.0.5"
+        "revision" : "9dfa9ca7409ba447c2824fa75091c40dd9291e1a",
+        "version" : "0.0.6"
       }
     },
     {
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax.git",
       "state" : {
-        "revision" : "21b3b45635decd1a0b89968f81b6d9a93128f773",
-        "version" : "602.0.0-prerelease-2025-08-11"
+        "revision" : "6673b05995983461eef015c4768f1483c245db22",
+        "version" : "603.0.0-prerelease-2025-09-15"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/SwiftLint.git",
       "state" : {
-        "revision" : "cc6fbaf355caf9ebe02c1b631a8edaa6df9145c5",
-        "version" : "0.61.0"
+        "revision" : "da9d742874d88f6d5d0f7b315d1fcf12655f2311",
+        "version" : "0.62.2"
       }
     },
     {
