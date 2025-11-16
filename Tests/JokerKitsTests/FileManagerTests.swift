@@ -109,7 +109,7 @@ class FileManagerTests {
             try FileManager.default.removeItem(atPath: testDirPath)
         }
         #expect(testDirPath.isDirPath() == false)
-        try FileManager.makeDirIfNotExist(path: testDirPath)
+        try testDirPath.makeDirIfNeed()
         #expect(testDirPath.isDirPath() == true)
     }
 }

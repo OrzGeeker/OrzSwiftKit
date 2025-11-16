@@ -84,8 +84,6 @@ public struct Downloader {
             }
             progressBar.succeed()
         }
-        let toFilePathDirPath = item.dstFileURL.deletingLastPathComponent().path
-        try FileManager.makeDirIfNotExist(path: toFilePathDirPath)
         try FileManager.moveFile(fromFilePath: try await downloadURLTask.value.path, toFilePath: item.dstFileURL.path, overwrite: true)
     }
     
