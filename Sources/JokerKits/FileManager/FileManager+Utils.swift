@@ -48,4 +48,9 @@ public extension FileManager {
         return try FileManager.default.contentsOfDirectory(atPath: dirPath)
             .filter { NSString.path(withComponents: [dirPath, $0]).isDirPath() }
     }
+    static func makeDirIfNotExist(path: String) throws -> Void {
+        if !path.isDirPath() {
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+        }
+    }
 }

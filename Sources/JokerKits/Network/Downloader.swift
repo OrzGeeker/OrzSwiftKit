@@ -1,6 +1,6 @@
 //
 //  Downloader.swift
-//  
+//
 //
 //  Created by joker on 2022/1/3.
 //
@@ -10,7 +10,7 @@ import Alamofire
 import ConsoleKit
 
 public struct DownloadItemInfo: Sendable {
-
+    
     public let sourceURL: URL
     public let dstFileURL: URL
     
@@ -84,6 +84,8 @@ public struct Downloader {
             }
             progressBar.succeed()
         }
+        let toFilePathDirPath = item.dstFileURL.deletingLastPathComponent().path
+        try FileManager.makeDirIfNotExist(path: toFilePathDirPath)
         try FileManager.moveFile(fromFilePath: try await downloadURLTask.value.path, toFilePath: item.dstFileURL.path, overwrite: true)
     }
     
@@ -91,35 +93,35 @@ public struct Downloader {
         _ items: [DownloadItemInfo],
         progressBar: ActivityIndicator<ProgressBar>? = nil) async throws {
             
-        try await withThrowingTaskGroup(of: Void.self, body: { group in
-
-            // 资源信息转获为下载任务，添加到下载任务组中，下载任务并发进行
-            for item in items {
-                group.addTask {
-                    try await Downloader.download(item)
+            try await withThrowingTaskGroup(of: Void.self, body: { group in
+                
+                // 资源信息转获为下载任务，添加到下载任务组中，下载任务并发进行
+                for item in items {
+                    group.addTask {
+                        try await Downloader.download(item)
+                    }
                 }
-            }
-
-            // 要显示进度时
-            if let progressBar {
-                let total = items.count
-                var index = 0
-                progressBar.start(refreshRate: 100)
-                // 更新进度条显示资源下载进度
-                for try await _ in group {
-                    index += 1
-                    let progress = Double(index) / Double(total)
-                    try progressBar.updateProgress(progress)
+                
+                // 要显示进度时
+                if let progressBar {
+                    let total = items.count
+                    var index = 0
+                    progressBar.start(refreshRate: 100)
+                    // 更新进度条显示资源下载进度
+                    for try await _ in group {
+                        index += 1
+                        let progress = Double(index) / Double(total)
+                        try progressBar.updateProgress(progress)
+                    }
+                    progressBar.succeed()
                 }
-                progressBar.succeed()
-            }
-            
-            // 不显示进度时
-            else {
-                try await group.waitForAll()
-            }
-        })
-    }
+                
+                // 不显示进度时
+                else {
+                    try await group.waitForAll()
+                }
+            })
+        }
 }
 
 extension ActivityIndicator where A == ProgressBar {
