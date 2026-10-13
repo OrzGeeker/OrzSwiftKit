@@ -12,7 +12,8 @@ let package = Package(
     products: [
         .library(name: "SwiftUIX", targets: ["SwiftUIX"]),
         .library(name: "JokerKits", targets: ["JokerKits"]),
-        .library(name: "Utils", targets: ["Utils"])
+        .library(name: "Utils", targets: ["Utils"]),
+        .library(name: "CacheKit", targets: ["CacheKit"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.12.3"),
@@ -43,6 +44,10 @@ let package = Package(
         .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits"]),
         .target(name: "Utils", plugins: [
             .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
-        ])
+        ]),
+        .target(name: "CacheKit", plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
+        .testTarget(name: "CacheKitTests", dependencies: ["CacheKit"])
     ]
 )

@@ -56,14 +56,17 @@ public struct Web: View {
             }
     }
     
+    @MainActor
     func goBack() {
         webViewStore.webView.goBack()
     }
     
+    @MainActor
     func goForward() {
         webViewStore.webView.goForward()
     }
     
+    @MainActor
     func openWithBrowser() {
         openURL(url)
     }
