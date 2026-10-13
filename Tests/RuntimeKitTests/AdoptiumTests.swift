@@ -75,6 +75,8 @@ struct AdoptiumTests {
             contents: Data()
         )
         defer { try? FileManager.default.removeItem(at: base) }
-        #expect(JavaRuntimeInstaller.findRuntimeHome(in: base) == home)
+        let found = try #require(JavaRuntimeInstaller.findRuntimeHome(in: base))
+        // 临时目录可能经 /var → /private/var 符号链接，比较解析后的路径。
+        #expect(found.resolvingSymlinksInPath().path == home.resolvingSymlinksInPath().path)
     }
 }
