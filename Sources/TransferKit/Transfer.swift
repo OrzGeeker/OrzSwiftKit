@@ -1,28 +1,29 @@
 import Foundation
 
-/// 下载基础设施（对齐 `docs/spec/behavior.md` B2/B8 / Python `orzmc/infra/transfer.py`）。
+/// 下载基础设施（对齐 `docs/spec/behavior.md` B2/B8）。
 ///
-/// - 单一 `URLSession` 实现（不依赖三方网络库）；
+/// - HTTP 走可注入的 `TransferTransport`（生产 `URLSession`，测试可离线替身）；
 /// - 命中哈希则跳过；
-/// - **断点续传**：进度持久化到与目标同级的 `.part` / `.partN`，重跑时用 `Range` 续传；
-/// - ≥ 8MB 走 4 路 `Range` 并行取再拼接；服务器返回 200（忽略 `Range`）时回退单流；
-/// - **结构化进度**：单流报 `bytes`（`didWriteData`）、批量报 `count`；
-/// - 完成后校验哈希再落盘；连接池 ≥ 并发数。
+/// - **断点续传**：进度持久化到 `.part` / `.partN`，重跑用 `Range` 续传；
+/// - ≥ 阈值走多路 `Range` 并行取再拼接；服务器返回 200（忽略 `Range`）时回退单流；
+/// - **结构化进度**：单流报 `bytes`、批量报 `count`；
+/// - 完成后校验哈希再落盘。
 public struct Transfer: @unchecked Sendable {
     public let policy: TransferPolicy
-    private let session: URLSession
+    private let transport: TransferTransport
     private let fileManager: FileManager
 
     public init(
         policy: TransferPolicy = TransferPolicy(),
         concurrency: Int = TransferPolicy.defaultThreads,
         session: URLSession? = nil,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        transport: TransferTransport? = nil
     ) {
         self.policy = policy
         self.fileManager = fileManager
-        self.session = session ?? Self.makeSession(
-            maxConnectionsPerHost: TransferPolicy.clampThreads(concurrency)
+        self.transport = transport ?? URLSessionTransferTransport(
+            session: session ?? Self.makeSession(maxConnectionsPerHost: policy.clampThreads(concurrency))
         )
     }
 
@@ -34,7 +35,6 @@ public struct Transfer: @unchecked Sendable {
 
     // MARK: - 判定
 
-    /// 目标已存在且哈希匹配（无哈希则只要存在即视为完成）。
     public func isUpToDate(_ item: DownloadItem) -> Bool {
         guard fileManager.fileExists(atPath: item.destination.path) else { return false }
         guard let expected = item.hash, let kind = item.hashKind else { return true }
@@ -58,23 +58,22 @@ public struct Transfer: @unchecked Sendable {
         if let size = item.size {
             resolvedSize = size
         } else {
-            resolvedSize = await contentLength(item.url)
+            resolvedSize = await transport.contentLength(of: item.url)
         }
         if let total = resolvedSize,
-           total >= Int64(TransferPolicy.rangeThreshold),
-           TransferPolicy.plan(sizeBytes: Int(total)).mode == .ranged {
+           total >= Int64(policy.thresholdBytes),
+           policy.plan(sizeBytes: Int(total)).mode == .ranged {
             if try await downloadRanged(item, total: total, onProgress: onProgress) { return }
         }
         try await downloadSingle(item, total: resolvedSize, onProgress: onProgress)
     }
 
-    /// 批量下载：并发受 `clampThreads` 限制，报 `count` 进度。
     public func download(
         _ items: [DownloadItem],
         concurrency: Int = TransferPolicy.defaultThreads,
         onProgress: (@Sendable (TransferProgress) -> Void)? = nil
     ) async throws {
-        let limit = TransferPolicy.clampThreads(concurrency)
+        let limit = policy.clampThreads(concurrency)
         let counter = ProgressCounter(total: items.count, onProgress: onProgress)
         try await withThrowingTaskGroup(of: Void.self) { group in
             var next = 0
@@ -114,15 +113,17 @@ public struct Transfer: @unchecked Sendable {
         if have > 0 {
             request.setValue("bytes=\(have)-", forHTTPHeaderField: "Range")
         }
-        let delegate = onProgress.map { ByteProgressDelegate(description: item.destination.lastPathComponent, handler: $0) }
-        let (temporary, response) = try await session.download(for: request, delegate: delegate)
-        let status = (response as? HTTPURLResponse)?.statusCode
+        let scratch = partsURL(item.destination, suffix: "fetch")
+        let name = item.destination.lastPathComponent
+        let response = try await transport.fetch(request, into: scratch) { written, length in
+            onProgress?(TransferProgress(kind: .bytes, description: name, total: length, current: written))
+        }
 
-        if status == 206 {
-            try append(temporary, to: part)
+        if response.statusCode == 206 {
+            try append(scratch, to: part)
         } else {
             have = 0
-            try moveOver(temporary, to: part)
+            try moveOver(scratch, to: part)
         }
 
         if let total {
@@ -134,7 +135,7 @@ public struct Transfer: @unchecked Sendable {
         try verifyAndFinish(part, item)
     }
 
-    // MARK: - 4 路 Range（可续传）
+    // MARK: - 多路 Range（可续传）
 
     /// 返回 `false` 表示需要回退单流（服务器忽略 `Range`）。
     private func downloadRanged(
@@ -142,7 +143,7 @@ public struct Transfer: @unchecked Sendable {
         total: Int64,
         onProgress: (@Sendable (TransferProgress) -> Void)?
     ) async throws -> Bool {
-        let ranges = TransferPolicy.ranges(total: Int(total), count: TransferPolicy.rangeParts)
+        let ranges = TransferPolicy.ranges(total: Int(total), count: policy.partCount)
         guard !ranges.isEmpty else { return false }
 
         let accumulator = ByteAccumulator(total: total, description: item.destination.lastPathComponent, onProgress: onProgress)
@@ -162,18 +163,14 @@ public struct Transfer: @unchecked Sendable {
                         "bytes=\(start)-\(range.upperBound - 1)",
                         forHTTPHeaderField: "Range"
                     )
-                    let (temporary, response) = try await self.session.download(for: request)
-                    guard let http = response as? HTTPURLResponse else {
-                        try? self.fileManager.removeItem(at: temporary)
-                        return true
-                    }
-                    if http.statusCode == 206 {
-                        try self.append(temporary, to: part)
-                        try? self.fileManager.removeItem(at: temporary)
+                    let scratch = self.partsURL(item.destination, suffix: "fetch\(index)")
+                    let response = try await self.transport.fetch(request, into: scratch, onBytes: nil)
+                    if response.statusCode == 206 {
+                        try self.append(scratch, to: part)
                         await accumulator.add(Int64(range.count) - have)
                         return false
                     }
-                    try? self.fileManager.removeItem(at: temporary)
+                    try? self.fileManager.removeItem(at: scratch)
                     return true
                 }
             }
@@ -258,42 +255,6 @@ public struct Transfer: @unchecked Sendable {
     private func hash(of url: URL, kind: HashKind) throws -> String {
         Hashing.hex(try Data(contentsOf: url), kind: kind)
     }
-
-    private func contentLength(_ url: URL) async -> Int64? {
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
-        guard let (_, response) = try? await session.data(for: request),
-              let http = response as? HTTPURLResponse,
-              http.expectedContentLength > 0
-        else { return nil }
-        return http.expectedContentLength
-    }
-}
-
-// MARK: - progress
-
-/// 单流字节进度回调。
-private final class ByteProgressDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-    private let label: String?
-    private let handler: @Sendable (TransferProgress) -> Void
-
-    init(description: String?, handler: @escaping @Sendable (TransferProgress) -> Void) {
-        self.label = description
-        self.handler = handler
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didWriteData bytesWritten: Int64,
-        totalBytesWritten: Int64,
-        totalBytesExpectedToWrite: Int64
-    ) {
-        let total = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
-        handler(TransferProgress(kind: .bytes, description: label, total: total, current: totalBytesWritten))
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
 }
 
 /// 分块字节进度聚合（按块完成累计）。

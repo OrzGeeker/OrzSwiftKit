@@ -1,9 +1,8 @@
 import Foundation
 
-/// 下载并发与大文件分块的**纯策略**（对齐 `docs/spec/behavior.md` B2）。
+/// 下载并发与大文件分块的**策略**（对齐 `docs/spec/behavior.md` B2）。
 ///
-/// 与 Python `orzmc/infra/transfer.py` 对齐：默认并发 16（范围 1–64）；
-/// ≥ 8MB 的文件分 4 路 `Range` 并行取再拼接。
+/// 默认：并发 16（范围 1–64）；≥ 8MB 分 4 路 `Range`。策略可实例化配置（测试用小阈值）。
 public struct TransferPolicy: Sendable {
     /// 默认并发数。
     public static let defaultThreads = 16
@@ -14,11 +13,18 @@ public struct TransferPolicy: Sendable {
     /// 分块路数。
     public static let rangeParts = 4
 
-    public init() {}
+    public var thresholdBytes: Int
+    public var partCount: Int
+    public var maxConcurrency: Int
 
-    /// 把任意并发数夹到 `1...maxThreads`。
-    public static func clampThreads(_ threads: Int) -> Int {
-        max(1, min(maxThreads, threads))
+    public init(
+        thresholdBytes: Int = TransferPolicy.rangeThreshold,
+        partCount: Int = TransferPolicy.rangeParts,
+        maxConcurrency: Int = TransferPolicy.maxThreads
+    ) {
+        self.thresholdBytes = thresholdBytes
+        self.partCount = partCount
+        self.maxConcurrency = maxConcurrency
     }
 
     public enum Mode: String, Sendable {
@@ -35,7 +41,20 @@ public struct TransferPolicy: Sendable {
         }
     }
 
-    /// 按文件大小决定单流还是分块。
+    public func clampThreads(_ threads: Int) -> Int {
+        max(1, min(maxConcurrency, threads))
+    }
+
+    public func plan(sizeBytes: Int) -> Plan {
+        sizeBytes >= thresholdBytes ? Plan(mode: .ranged, parts: partCount) : Plan(mode: .single, parts: 1)
+    }
+
+    // MARK: - 静态（规范默认，供一致性适配器使用）
+
+    public static func clampThreads(_ threads: Int) -> Int {
+        max(1, min(maxThreads, threads))
+    }
+
     public static func plan(sizeBytes: Int) -> Plan {
         sizeBytes >= rangeThreshold
             ? Plan(mode: .ranged, parts: rangeParts)
