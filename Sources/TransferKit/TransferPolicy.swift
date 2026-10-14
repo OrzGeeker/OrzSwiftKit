@@ -12,19 +12,25 @@ public struct TransferPolicy: Sendable {
     public static let rangeThreshold = 8 * 1024 * 1024
     /// 分块路数。
     public static let rangeParts = 4
+    /// 单次下载失败后的**运行内重试**次数（对齐 spec B2「有限次重试」）。
+    public static let resumeAttempts = 4
 
     public var thresholdBytes: Int
     public var partCount: Int
     public var maxConcurrency: Int
+    /// 运行内重试上限；>1 时中途断连会在同一进程内重试（可配合已落盘的 `.part` 续传）。
+    public var maxAttempts: Int
 
     public init(
         thresholdBytes: Int = TransferPolicy.rangeThreshold,
         partCount: Int = TransferPolicy.rangeParts,
-        maxConcurrency: Int = TransferPolicy.maxThreads
+        maxConcurrency: Int = TransferPolicy.maxThreads,
+        maxAttempts: Int = TransferPolicy.resumeAttempts
     ) {
         self.thresholdBytes = thresholdBytes
         self.partCount = partCount
         self.maxConcurrency = maxConcurrency
+        self.maxAttempts = max(1, maxAttempts)
     }
 
     public enum Mode: String, Sendable {
