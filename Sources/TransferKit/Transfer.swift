@@ -4,8 +4,9 @@ import Foundation
 ///
 /// - 单一 `URLSession` 实现（不依赖三方网络库）；
 /// - 命中哈希则跳过；
-/// - ≥ 8MB 走 4 路 `Range` 并行取再拼接；服务器忽略 `Range`（返回 200）时回退单流；
-/// - 写入前用 `.part` 临时文件，完成后校验哈希再落盘；连接池 ≥ 并发数。
+/// - **断点续传**：进度持久化到与目标同级的 `.part` / `.partN`，重跑时用 `Range` 续传；
+/// - ≥ 8MB 走 4 路 `Range` 并行取再拼接；服务器返回 200（忽略 `Range`）时回退单流；
+/// - 完成后校验哈希再落盘；连接池 ≥ 并发数。
 public struct Transfer: @unchecked Sendable {
     public let policy: TransferPolicy
     private let session: URLSession
@@ -60,7 +61,7 @@ public struct Transfer: @unchecked Sendable {
            TransferPolicy.plan(sizeBytes: Int(total)).mode == .ranged {
             if try await downloadRanged(item, total: total) { return }
         }
-        try await downloadSingle(item)
+        try await downloadSingle(item, total: resolvedSize)
     }
 
     /// 批量下载：并发受 `clampThreads` 限制，按完成计数回报进度。
@@ -90,93 +91,157 @@ public struct Transfer: @unchecked Sendable {
         }
     }
 
-    // MARK: - internals
+    // MARK: - 单流（可续传）
 
-    private func downloadSingle(_ item: DownloadItem) async throws {
-        let (temporary, _) = try await session.download(from: item.url)
-        try replace(temporary, with: item.destination)
-        try verify(item)
+    private func downloadSingle(_ item: DownloadItem, total: Int64?) async throws {
+        let part = partsURL(item.destination, suffix: "part")
+        var have = fileSize(part)
+
+        if let total, have == total {
+            try verifyAndFinish(part, item)
+            return
+        }
+
+        var request = URLRequest(url: item.url)
+        if have > 0 {
+            request.setValue("bytes=\(have)-", forHTTPHeaderField: "Range")
+        }
+        let (temporary, response) = try await session.download(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode
+
+        if status == 206 {
+            // 服务器支持续传：追加到已有进度
+            try append(temporary, to: part)
+        } else {
+            // 200（或不支持 Range）：从零重下
+            have = 0
+            try moveOver(temporary, to: part)
+        }
+
+        if let total {
+            guard fileSize(part) == total else {
+                try? fileManager.removeItem(at: part)
+                throw TransferError.sizeMismatch(expected: total, actual: fileSize(part))
+            }
+        }
+        try verifyAndFinish(part, item)
     }
 
-    /// 返回 `false` 表示服务器忽略 `Range`，调用方应回退单流。
+    // MARK: - 4 路 Range（可续传）
+
+    /// 返回 `false` 表示需要回退单流（服务器忽略 `Range`）。
     private func downloadRanged(_ item: DownloadItem, total: Int64) async throws -> Bool {
         let ranges = TransferPolicy.ranges(total: Int(total), count: TransferPolicy.rangeParts)
         guard !ranges.isEmpty else { return false }
 
-        let parts: [URL]? = try await withThrowingTaskGroup(of: (Int, URL?).self) { group in
+        let needsFallback = try await withThrowingTaskGroup(of: Bool.self) { group in
             for (index, range) in ranges.enumerated() {
                 group.addTask {
+                    let part = self.partsURL(item.destination, suffix: "part\(index)")
+                    if self.fileSize(part) == Int64(range.count) { return false }  // 该块已完成
+
+                    let have = self.fileSize(part)
+                    let start = range.lowerBound + Int(have)
                     var request = URLRequest(url: item.url)
                     request.setValue(
-                        "bytes=\(range.lowerBound)-\(range.upperBound - 1)",
+                        "bytes=\(start)-\(range.upperBound - 1)",
                         forHTTPHeaderField: "Range"
                     )
                     let (temporary, response) = try await self.session.download(for: request)
-                    if let http = response as? HTTPURLResponse, http.statusCode == 206 {
-                        return (index, temporary)
+                    guard let http = response as? HTTPURLResponse else {
+                        try? self.fileManager.removeItem(at: temporary)
+                        return true
+                    }
+                    if http.statusCode == 206 {
+                        try self.append(temporary, to: part)
+                        try? self.fileManager.removeItem(at: temporary)
+                        return false
                     }
                     try? self.fileManager.removeItem(at: temporary)
-                    return (index, nil)
+                    return true
                 }
             }
-            var collected: [Int: URL] = [:]
-            var allRanged = true
-            for try await (index, temporary) in group {
-                if let temporary {
-                    collected[index] = temporary
-                } else {
-                    allRanged = false
-                }
-            }
-            guard allRanged else {
-                for (_, url) in collected { try? self.fileManager.removeItem(at: url) }
-                return nil
-            }
-            return (0..<ranges.count).compactMap { collected[$0] }
+            var fallback = false
+            for try await item in group { fallback = fallback || item }
+            return fallback
         }
 
-        guard let parts else { return false }
+        if needsFallback {
+            for index in 0..<ranges.count {
+                try? fileManager.removeItem(at: partsURL(item.destination, suffix: "part\(index)"))
+            }
+            return false
+        }
 
-        let assembled = item.destination.appendingPathExtension("part")
+        // 全部块就绪后按序拼接
+        for (index, range) in ranges.enumerated()
+        where fileSize(partsURL(item.destination, suffix: "part\(index)")) != Int64(range.count) {
+            return false
+        }
+
+        let assembled = partsURL(item.destination, suffix: "part")
         fileManager.createFile(atPath: assembled.path, contents: nil)
         let handle = try FileHandle(forWritingTo: assembled)
-        var received: Int64 = 0
-        for url in parts {
-            let data = try Data(contentsOf: url)
-            try handle.write(contentsOf: data)
-            received += Int64(data.count)
-            try? fileManager.removeItem(at: url)
+        for index in 0..<ranges.count {
+            let part = partsURL(item.destination, suffix: "part\(index)")
+            try handle.write(contentsOf: try Data(contentsOf: part))
+            try? fileManager.removeItem(at: part)
         }
         try handle.close()
 
-        guard received == total else {
+        guard fileSize(assembled) == total else {
             try? fileManager.removeItem(at: assembled)
-            throw TransferError.sizeMismatch(expected: total, actual: received)
+            throw TransferError.sizeMismatch(expected: total, actual: fileSize(assembled))
         }
-        try replace(assembled, with: item.destination)
-        try verify(item)
+        try verifyAndFinish(assembled, item)
         return true
     }
 
-    private func verify(_ item: DownloadItem) throws {
-        guard let expected = item.hash, let kind = item.hashKind else { return }
-        let actual = try hash(of: item.destination, kind: kind)
-        guard actual.caseInsensitiveCompare(expected) == .orderedSame else {
-            try? fileManager.removeItem(at: item.destination)
-            throw TransferError.hashMismatch(expected: expected, actual: actual)
+    // MARK: - helpers
+
+    private func partsURL(_ destination: URL, suffix: String) -> URL {
+        destination.appendingPathExtension(suffix)
+    }
+
+    private func fileSize(_ url: URL) -> Int64 {
+        let attributes = try? fileManager.attributesOfItem(atPath: url.path)
+        return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+    }
+
+    private func append(_ temporary: URL, to part: URL) throws {
+        let data = try Data(contentsOf: temporary)
+        if !fileManager.fileExists(atPath: part.path) {
+            fileManager.createFile(atPath: part.path, contents: nil)
         }
+        let handle = try FileHandle(forWritingTo: part)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: data)
+        try handle.close()
+        try? fileManager.removeItem(at: temporary)
+    }
+
+    private func moveOver(_ temporary: URL, to part: URL) throws {
+        if fileManager.fileExists(atPath: part.path) {
+            try fileManager.removeItem(at: part)
+        }
+        try fileManager.copyItem(at: temporary, to: part)
+        try? fileManager.removeItem(at: temporary)
+    }
+
+    private func verifyAndFinish(_ part: URL, _ item: DownloadItem) throws {
+        if let expected = item.hash, let kind = item.hashKind {
+            let actual = try hash(of: part, kind: kind)
+            guard actual.caseInsensitiveCompare(expected) == .orderedSame else {
+                try? fileManager.removeItem(at: part)
+                try? fileManager.removeItem(at: item.destination)
+                throw TransferError.hashMismatch(expected: expected, actual: actual)
+            }
+        }
+        try moveOver(part, to: item.destination)
     }
 
     private func hash(of url: URL, kind: HashKind) throws -> String {
         Hashing.hex(try Data(contentsOf: url), kind: kind)
-    }
-
-    private func replace(_ temporary: URL, with destination: URL) throws {
-        if fileManager.fileExists(atPath: destination.path) {
-            try fileManager.removeItem(at: destination)
-        }
-        try fileManager.copyItem(at: temporary, to: destination)
-        try? fileManager.removeItem(at: temporary)
     }
 
     private func contentLength(_ url: URL) async -> Int64? {
