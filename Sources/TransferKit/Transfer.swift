@@ -109,30 +109,46 @@ public struct Transfer: @unchecked Sendable {
             return
         }
 
-        var request = URLRequest(url: item.url)
-        if have > 0 {
-            request.setValue("bytes=\(have)-", forHTTPHeaderField: "Range")
-        }
         let scratch = partsURL(item.destination, suffix: "fetch")
         let name = item.destination.lastPathComponent
-        let response = try await transport.fetch(request, into: scratch) { written, length in
-            onProgress?(TransferProgress(kind: .bytes, description: name, total: length, current: written))
-        }
-
-        if response.statusCode == 206 {
-            try append(scratch, to: part)
-        } else {
-            have = 0
-            try moveOver(scratch, to: part)
-        }
-
-        if let total {
-            guard fileSize(part) == total else {
-                try? fileManager.removeItem(at: part)
-                throw TransferError.sizeMismatch(expected: total, actual: fileSize(part))
+        var lastError: Error?
+        for _ in 0..<policy.maxAttempts {
+            var request = URLRequest(url: item.url)
+            if have > 0 {
+                request.setValue("bytes=\(have)-", forHTTPHeaderField: "Range")
             }
+            try? fileManager.removeItem(at: scratch)
+
+            let response: TransferResponse
+            do {
+                response = try await transport.fetch(request, into: scratch) { written, length in
+                    onProgress?(TransferProgress(kind: .bytes, description: name, total: length, current: written))
+                }
+            } catch {
+                // 运行内重试：保留已落盘部分（若传输层支持），用 Range 续传。
+                lastError = error
+                appendIfPresent(scratch, to: part)
+                have = fileSize(part)
+                continue
+            }
+
+            if response.statusCode == 206 {
+                try append(scratch, to: part)
+            } else {
+                have = 0
+                try moveOver(scratch, to: part)
+            }
+
+            if let total {
+                guard fileSize(part) == total else {
+                    try? fileManager.removeItem(at: part)
+                    throw TransferError.sizeMismatch(expected: total, actual: fileSize(part))
+                }
+            }
+            try verifyAndFinish(part, item)
+            return
         }
-        try verifyAndFinish(part, item)
+        throw lastError ?? TransferError.sizeMismatch(expected: total ?? -1, actual: fileSize(part))
     }
 
     // MARK: - 多路 Range（可续传）
@@ -156,22 +172,38 @@ public struct Transfer: @unchecked Sendable {
                         return false
                     }
 
-                    let have = self.fileSize(part)
-                    let start = range.lowerBound + Int(have)
-                    var request = URLRequest(url: item.url)
-                    request.setValue(
-                        "bytes=\(start)-\(range.upperBound - 1)",
-                        forHTTPHeaderField: "Range"
-                    )
+                    var have = self.fileSize(part)
                     let scratch = self.partsURL(item.destination, suffix: "fetch\(index)")
-                    let response = try await self.transport.fetch(request, into: scratch, onBytes: nil)
-                    if response.statusCode == 206 {
-                        try self.append(scratch, to: part)
-                        await accumulator.add(Int64(range.count) - have)
-                        return false
+                    var lastError: Error?
+                    for _ in 0..<self.policy.maxAttempts {
+                        let start = range.lowerBound + Int(have)
+                        var request = URLRequest(url: item.url)
+                        request.setValue(
+                            "bytes=\(start)-\(range.upperBound - 1)",
+                            forHTTPHeaderField: "Range"
+                        )
+                        try? self.fileManager.removeItem(at: scratch)
+
+                        let response: TransferResponse
+                        do {
+                            response = try await self.transport.fetch(request, into: scratch, onBytes: nil)
+                        } catch {
+                            // 运行内重试：保住已落盘部分，下一轮从续传偏移重试本块。
+                            lastError = error
+                            self.appendIfPresent(scratch, to: part)
+                            have = self.fileSize(part)
+                            continue
+                        }
+                        if response.statusCode == 206 {
+                            try self.append(scratch, to: part)
+                            await accumulator.add(Int64(range.count) - have)
+                            return false
+                        }
+                        try? self.fileManager.removeItem(at: scratch)
+                        return true
                     }
-                    try? self.fileManager.removeItem(at: scratch)
-                    return true
+                    throw lastError
+                        ?? TransferError.sizeMismatch(expected: Int64(range.count), actual: self.fileSize(part))
                 }
             }
             var fallback = false
@@ -230,6 +262,12 @@ public struct Transfer: @unchecked Sendable {
         try handle.write(contentsOf: data)
         try handle.close()
         try? fileManager.removeItem(at: temporary)
+    }
+
+    /// 把传输层失败时可能留下的部分字节并入已落盘的 `.part`（无则不动）。
+    private func appendIfPresent(_ scratch: URL, to part: URL) {
+        guard fileManager.fileExists(atPath: scratch.path) else { return }
+        try? append(scratch, to: part)
     }
 
     private func moveOver(_ temporary: URL, to part: URL) throws {
