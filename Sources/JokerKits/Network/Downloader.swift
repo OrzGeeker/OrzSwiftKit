@@ -72,22 +72,30 @@ public struct Downloader {
 
     public static func download(
         _ item: DownloadItemInfo,
-        progressBar: ActivityIndicator<ProgressBar>? = nil
+        progressBar: ActivityIndicator<ProgressBar>? = nil,
+        onProgress: (@Sendable (Double) -> Void)? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
         try await transfer.download(item.transferItem) { progress in
-            if let fraction = progress.fraction { try? progressBar?.updateProgress(fraction) }
+            if let fraction = progress.fraction {
+                try? progressBar?.updateProgress(fraction)
+                onProgress?(fraction)
+            }
         }
         progressBar?.succeed()
     }
 
     public static func download(
         _ items: [DownloadItemInfo],
-        progressBar: ActivityIndicator<ProgressBar>? = nil
+        progressBar: ActivityIndicator<ProgressBar>? = nil,
+        onProgress: (@Sendable (Double) -> Void)? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
         try await transfer.download(items.map(\.transferItem)) { progress in
-            if let fraction = progress.fraction { try? progressBar?.updateProgress(fraction) }
+            if let fraction = progress.fraction {
+                try? progressBar?.updateProgress(fraction)
+                onProgress?(fraction)
+            }
         }
         progressBar?.succeed()
     }
