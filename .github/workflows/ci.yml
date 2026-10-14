@@ -25,3 +25,18 @@ jobs:
       # 只跑与 docs/spec 对齐的套件：其余既有测试依赖本机 JDK/brew，CI 上不稳定。
       - name: Test
         run: swift test --filter 'CacheKitTests|RuntimeKitTests|TransferKitTests|TransferPolicyTests|TransferTests|TransferProgressTests|TransferDownloadTests|ProcessRunnerTests'
+
+  # 真实网络冒烟（仅手动触发）：验证 TransferKit 真实下载 + 哈希（含 2 路 Range）。
+  network-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: Real-network download smoke
+        env:
+          ORZMC_NETWORK_SMOKE: "1"
+        run: swift test --filter 'TransferNetworkSmokeTests'
