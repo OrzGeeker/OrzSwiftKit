@@ -75,7 +75,9 @@ public struct Downloader {
         progressBar: ActivityIndicator<ProgressBar>? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
-        try await transfer.download(item.transferItem)
+        try await transfer.download(item.transferItem) { progress in
+            if let fraction = progress.fraction { try? progressBar?.updateProgress(fraction) }
+        }
         progressBar?.succeed()
     }
 
@@ -84,8 +86,8 @@ public struct Downloader {
         progressBar: ActivityIndicator<ProgressBar>? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
-        try await transfer.download(items.map(\.transferItem)) { done, total in
-            try? progressBar?.updateProgress(Double(done) / Double(total))
+        try await transfer.download(items.map(\.transferItem)) { progress in
+            if let fraction = progress.fraction { try? progressBar?.updateProgress(fraction) }
         }
         progressBar?.succeed()
     }
