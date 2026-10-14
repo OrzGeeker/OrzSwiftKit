@@ -24,4 +24,4 @@ jobs:
 
       # 只跑与 docs/spec 对齐的套件：其余既有测试依赖本机 JDK/brew，CI 上不稳定。
       - name: Test
-        run: swift test --filter 'CacheKitTests|RuntimeKitTests|TransferKitTests|TransferPolicyTests|TransferTests|TransferProgressTests'
+        run: swift test --filter 'CacheKitTests|RuntimeKitTests|TransferKitTests|TransferPolicyTests|TransferTests|TransferProgressTests|ProcessRunnerTests'
