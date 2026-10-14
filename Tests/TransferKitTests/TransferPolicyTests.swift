@@ -1,6 +1,6 @@
 import Testing
 
-@testable import JokerKits
+@testable import TransferKit
 
 @Suite
 struct TransferPolicyTests {

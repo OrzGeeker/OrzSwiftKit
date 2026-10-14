@@ -5,28 +5,43 @@
 //  Created by joker on 2022/1/3.
 //
 
-import Foundation
-import Alamofire
 import ConsoleKit
+import Foundation
+import TransferKit
 
 public struct DownloadItemInfo: Sendable {
-    
+
     public let sourceURL: URL
     public let dstFileURL: URL
-    
+
     public let hash: String?
     public let hashType: HashType?
-    
+
     public init(sourceURL: URL, dstFileURL: URL, hash: String? = nil, hashType: HashType? = nil) {
         self.sourceURL = sourceURL
         self.dstFileURL = dstFileURL
         self.hash = hash
         self.hashType = hashType
     }
-    
+
     public enum HashType: Sendable {
         case sha1
         case sha256
+    }
+}
+
+extension DownloadItemInfo {
+    var transferItem: DownloadItem {
+        DownloadItem(url: sourceURL, destination: dstFileURL, hash: hash, hashKind: hashType?.kind)
+    }
+}
+
+extension DownloadItemInfo.HashType {
+    var kind: HashKind {
+        switch self {
+        case .sha1: return .sha1
+        case .sha256: return .sha256
+        }
     }
 }
 
@@ -34,92 +49,46 @@ extension Array where Element == DownloadItemInfo {
     public struct DownloadAsyncIterator: AsyncIteratorProtocol {
         var itemsIterator: IndexingIterator<[DownloadItemInfo]>
         public mutating func next() async throws -> DownloadItemInfo? {
-            guard let item = itemsIterator.next()
-            else {
-                return nil
-            }
+            guard let item = itemsIterator.next() else { return nil }
             try await Downloader.download(item)
             return item
         }
     }
+
     public struct DownloadAsyncSequence: AsyncSequence {
         let items: [DownloadItemInfo]
         public func makeAsyncIterator() -> DownloadAsyncIterator {
-            return DownloadAsyncIterator(itemsIterator: self.items.makeIterator())
+            DownloadAsyncIterator(itemsIterator: items.makeIterator())
         }
     }
+
     public var asyncSequence: DownloadAsyncSequence { DownloadAsyncSequence(items: self) }
 }
 
+/// 下载入口（基于 `TransferKit` 的统一实现：哈希跳过 / 4 路 Range / 连接池）。
 public struct Downloader {
-    
-    public static func download(_ sourceURL: URL) -> (DownloadTask<URL>, StreamOf<Progress>) {
-        let retryPolicy = RetryPolicy(
-            retryLimit: 5,
-            exponentialBackoffBase: 2,
-            exponentialBackoffScale: 1)
-        let request = AF.download(sourceURL, interceptor: retryPolicy)
-        return (request.serializingDownloadedFileURL(), request.downloadProgress())
-    }
-    
-    public static func download(_ item: DownloadItemInfo, progressBar: ActivityIndicator<ProgressBar>? = nil) async throws {
+
+    private static let transfer = Transfer()
+
+    public static func download(
+        _ item: DownloadItemInfo,
+        progressBar: ActivityIndicator<ProgressBar>? = nil
+    ) async throws {
         progressBar?.start(refreshRate: 100)
-        if let hash = item.hash, let hashType = item.hashType, item.dstFileURL.path.isExist() {
-            var hashValue: String?
-            switch hashType {
-            case .sha1:
-                hashValue = try item.dstFileURL.fileSHA1Value
-            case .sha256:
-                hashValue = try item.dstFileURL.fileSHA256Value
-            }
-            guard hashValue != hash else {
-                progressBar?.succeed()
-                return
-            }
-        }
-        let (downloadURLTask, downloadProgressStream) = Downloader.download(item.sourceURL)
-        if let progressBar = progressBar {
-            for try await progress in downloadProgressStream {
-                try progressBar.updateProgress(progress.fractionCompleted)
-            }
-            progressBar.succeed()
-        }
-        try FileManager.moveFile(fromFilePath: try await downloadURLTask.value.path, toFilePath: item.dstFileURL.path, overwrite: true)
+        try await transfer.download(item.transferItem)
+        progressBar?.succeed()
     }
-    
+
     public static func download(
         _ items: [DownloadItemInfo],
-        progressBar: ActivityIndicator<ProgressBar>? = nil) async throws {
-            
-            try await withThrowingTaskGroup(of: Void.self, body: { group in
-                
-                // 资源信息转获为下载任务，添加到下载任务组中，下载任务并发进行
-                for item in items {
-                    group.addTask {
-                        try await Downloader.download(item)
-                    }
-                }
-                
-                // 要显示进度时
-                if let progressBar {
-                    let total = items.count
-                    var index = 0
-                    progressBar.start(refreshRate: 100)
-                    // 更新进度条显示资源下载进度
-                    for try await _ in group {
-                        index += 1
-                        let progress = Double(index) / Double(total)
-                        try progressBar.updateProgress(progress)
-                    }
-                    progressBar.succeed()
-                }
-                
-                // 不显示进度时
-                else {
-                    try await group.waitForAll()
-                }
-            })
+        progressBar: ActivityIndicator<ProgressBar>? = nil
+    ) async throws {
+        progressBar?.start(refreshRate: 100)
+        try await transfer.download(items.map(\.transferItem)) { done, total in
+            try? progressBar?.updateProgress(Double(done) / Double(total))
         }
+        progressBar?.succeed()
+    }
 }
 
 extension ActivityIndicator where A == ProgressBar {

@@ -14,6 +14,8 @@ public struct TransferPolicy: Sendable {
     /// 分块路数。
     public static let rangeParts = 4
 
+    public init() {}
+
     /// 把任意并发数夹到 `1...maxThreads`。
     public static func clampThreads(_ threads: Int) -> Int {
         max(1, min(maxThreads, threads))

@@ -79,6 +79,7 @@ struct OracleJDKScriptFriendlyURLs {
 }
 
 import CryptoKit
+import TransferKit
 extension OracleJDKScriptFriendlyURLs {
     
     func download(to dst: URL? = nil, progressHandler: (@Sendable (Double) async -> Void)? = nil, validation: Bool = true) async throws -> URL? {
@@ -88,15 +89,14 @@ extension OracleJDKScriptFriendlyURLs {
             return nil
         }
         
-        // download jdk file to local disk
-        let (downloadURLTask, downloadProgressStream) = Downloader.download(jdkURL)
-        if let progressHandler {
-            for try await progress in downloadProgressStream {
-                await progressHandler(progress.fractionCompleted)
-            }
-        }
-        
-        let jdkLocalFilePath = try await downloadURLTask.value.path
+        // download jdk file to local disk（统一走 TransferKit）
+        let temporaryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(jdkURL.pathExtension)
+        try await Transfer().download(DownloadItem(url: jdkURL, destination: temporaryURL))
+        if let progressHandler { await progressHandler(1) }
+
+        let jdkLocalFilePath = temporaryURL.path
         
         // validation of sha256sum
         if validation {

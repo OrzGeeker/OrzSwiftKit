@@ -14,12 +14,12 @@ let package = Package(
         .library(name: "JokerKits", targets: ["JokerKits"]),
         .library(name: "Utils", targets: ["Utils"]),
         .library(name: "CacheKit", targets: ["CacheKit"]),
-        .library(name: "RuntimeKit", targets: ["RuntimeKit"])
+        .library(name: "RuntimeKit", targets: ["RuntimeKit"]),
+        .library(name: "TransferKit", targets: ["TransferKit"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.12.3"),
         .package(url: "https://github.com/vapor/console-kit.git", from: "4.15.2"),
-        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.2"),
         .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.5"),
         .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.6"),
@@ -36,8 +36,8 @@ let package = Package(
             .product(name: "Crypto",
                      package: "swift-crypto",
                      condition: .when(platforms: [.linux])),
-            .product(name: "Alamofire", package: "alamofire"),
             .product(name: "ConsoleKit", package: "console-kit"),
+            "TransferKit",
             "Utils"
         ], plugins: [
             .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
@@ -53,6 +53,14 @@ let package = Package(
         .target(name: "RuntimeKit", dependencies: ["Utils", "JokerKits"], plugins: [
             .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
-        .testTarget(name: "RuntimeKitTests", dependencies: ["RuntimeKit"])
+        .testTarget(name: "RuntimeKitTests", dependencies: ["RuntimeKit"]),
+        .target(name: "TransferKit", dependencies: [
+            .product(name: "Crypto",
+                     package: "swift-crypto",
+                     condition: .when(platforms: [.linux]))
+        ], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
+        .testTarget(name: "TransferKitTests", dependencies: ["TransferKit"])
     ]
 )
