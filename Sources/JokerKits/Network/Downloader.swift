@@ -68,7 +68,10 @@ extension Array where Element == DownloadItemInfo {
 /// 下载入口（基于 `TransferKit` 的统一实现：哈希跳过 / 4 路 Range / 连接池）。
 public struct Downloader {
 
-    private static let transfer = Transfer()
+    /// 下载并发上限（默认 `TransferPolicy.defaultThreads`）。CLI 可在启动时按 `--download-threads` 设置。
+    nonisolated(unsafe) public static var concurrency: Int = TransferPolicy.defaultThreads
+
+    private static var transfer: Transfer { Transfer(concurrency: concurrency) }
 
     public static func download(
         _ item: DownloadItemInfo,
