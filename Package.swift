@@ -22,16 +22,17 @@ let package = Package(
         .package(url: "https://github.com/vapor/console-kit.git", from: "4.15.2"),
         .package(url: "https://github.com/kylehickinson/swiftui-webview.git", from: "0.3.1"),
         .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.5"),
-        // 仅用于**按需** lint（`swift package plugin swiftlint fix`）。
-        // 切勿把 `OrzSwiftLintBuildToolPlugin` 挂到 target 上：它会把 swift-syntax
-        // 拽进每次（含 release）编译，实测让下游 CI 从 ~3min 涨到 ~9min、`.build`
-        // 涨到 ~3GiB。构建质量门禁请交给独立的 lint 步骤（见父仓库 HANDOFF §5）。
-        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.6"),
+        // 统一 lint 配置：build-tool 插件，**每次构建自动跑**（本地/CI 都能及时暴露）。
+        // 0.0.7 起 OrzSwiftLint 改用 SwiftLint 官方**预编译二进制**（artifactbundle），
+        // 插件照跑但不再编译 swift-syntax（下游冷编 554s→~几十秒、缓存 ~3GiB→几百MB）。
+        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.8"),
     ],
     targets: [
         .target(name: "SwiftUIX", dependencies: [
             "Utils",
             .product(name: "WebView", package: "swiftui-webview")
+        ], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "SwiftUIXTests", dependencies: ["SwiftUIX"]),
         .target(name: "JokerKits", dependencies: [
@@ -41,17 +42,27 @@ let package = Package(
             .product(name: "ConsoleKit", package: "console-kit"),
             "TransferKit",
             "Utils"
+        ], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "JokerKitsTests", dependencies: ["JokerKits"]),
-        .target(name: "Utils"),
-        .target(name: "CacheKit"),
+        .target(name: "Utils", plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
+        .target(name: "CacheKit", plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
         .testTarget(name: "CacheKitTests", dependencies: ["CacheKit"]),
-        .target(name: "RuntimeKit", dependencies: ["Utils", "JokerKits"]),
+        .target(name: "RuntimeKit", dependencies: ["Utils", "JokerKits"], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
+        ]),
         .testTarget(name: "RuntimeKitTests", dependencies: ["RuntimeKit"]),
         .target(name: "TransferKit", dependencies: [
             .product(name: "Crypto",
                      package: "swift-crypto",
                      condition: .when(platforms: [.linux]))
+        ], plugins: [
+            .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
         .testTarget(name: "TransferKitTests", dependencies: ["TransferKit"])
     ]
