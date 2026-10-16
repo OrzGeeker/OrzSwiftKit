@@ -12,9 +12,23 @@ concurrency:
 
 jobs:
   build-test:
+    # 只用标准 GitHub-hosted runner（`macos-15`/`macos-14`/`macos-latest`）。
+    # 切勿改成 `-large`/`-xlarge`（larger runner，即使 public 仓库也计费）。
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      # 缓存只在 main 落盘（PR 只 restore），避免分支各存一份互相驱逐。
+      - name: Restore SwiftPM cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
 
       - name: Toolchain
         run: swift --version
@@ -25,6 +39,15 @@ jobs:
       # 只跑与 docs/spec 对齐的套件：其余既有测试依赖本机 JDK/brew，CI 上不稳定。
       - name: Test
         run: swift test --filter 'CacheKitTests|RuntimeKitTests|TransferKitTests|TransferPolicyTests|TransferTests|TransferProgressTests|TransferDownloadTests|ProcessRunnerTests'
+
+      - name: Save SwiftPM cache
+        if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   # 真实网络冒烟（仅手动触发）：验证 TransferKit 真实下载 + 哈希（含 2 路 Range）。
   network-smoke:
