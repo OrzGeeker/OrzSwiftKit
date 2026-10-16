@@ -41,6 +41,32 @@ struct ArchiveExtractorTests {
         #expect(threw)
     }
 
+    /// 模拟 `URLSession.download` 的 `.tmp` 临时名：扩展名不可用，靠魔数识别。
+    @Test func extractsExtensionlessTarGz() throws {
+        let base = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let payload = base.appendingPathComponent("src/payload", isDirectory: true)
+        try FileManager.default.createDirectory(at: payload, withIntermediateDirectories: true)
+        try "hi".write(
+            to: payload.appendingPathComponent("hello.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        let named = base.appendingPathComponent("payload.tar.gz")
+        try run(["tar", "-czf", named.path, "-C", base.appendingPathComponent("src").path, "payload"])
+        let temp = base.appendingPathComponent("cfnetworkdownload_xxxx.tmp")
+        try FileManager.default.copyItem(at: named, to: temp)
+
+        let destination = base.appendingPathComponent("out", isDirectory: true)
+        try ArchiveExtractor.extract(archive: temp, into: destination)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: destination.appendingPathComponent("payload/hello.txt").path
+            )
+        )
+    }
+
     private func run(_ arguments: [String]) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
