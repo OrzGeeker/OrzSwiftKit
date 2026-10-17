@@ -66,6 +66,10 @@ extension Array where Element == DownloadItemInfo {
 }
 
 /// 下载入口（基于 `TransferKit` 的统一实现：哈希跳过 / 4 路 Range / 连接池）。
+///
+/// `onEvent` 给出**结构化**进度（`kind` = count/bytes、`total`/`current`，对齐
+/// `docs/spec/behavior.md` B8）：`total == nil` 即不定长，调用方不该自行假设 0%。
+/// `onProgress`（分数）保留给旧的 GUI/渲染用途。
 public struct Downloader {
 
     /// 下载并发上限（默认 `TransferPolicy.defaultThreads`）。CLI 可在启动时按 `--download-threads` 设置。
@@ -76,10 +80,12 @@ public struct Downloader {
     public static func download(
         _ item: DownloadItemInfo,
         progressBar: ActivityIndicator<ProgressBar>? = nil,
-        onProgress: (@Sendable (Double) -> Void)? = nil
+        onProgress: (@Sendable (Double) -> Void)? = nil,
+        onEvent: (@Sendable (TransferProgress) -> Void)? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
         try await transfer.download(item.transferItem) { progress in
+            onEvent?(progress)
             if let fraction = progress.fraction {
                 try? progressBar?.updateProgress(fraction)
                 onProgress?(fraction)
@@ -91,10 +97,12 @@ public struct Downloader {
     public static func download(
         _ items: [DownloadItemInfo],
         progressBar: ActivityIndicator<ProgressBar>? = nil,
-        onProgress: (@Sendable (Double) -> Void)? = nil
+        onProgress: (@Sendable (Double) -> Void)? = nil,
+        onEvent: (@Sendable (TransferProgress) -> Void)? = nil
     ) async throws {
         progressBar?.start(refreshRate: 100)
         try await transfer.download(items.map(\.transferItem)) { progress in
+            onEvent?(progress)
             if let fraction = progress.fraction {
                 try? progressBar?.updateProgress(fraction)
                 onProgress?(fraction)
