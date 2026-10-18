@@ -38,7 +38,7 @@ let package = Package(
         .target(name: "JokerKits", dependencies: [
             .product(name: "Crypto",
                      package: "swift-crypto",
-                     condition: .when(platforms: [.linux])),
+                     condition: .when(platforms: [.linux, .windows])),
             .product(name: "ConsoleKit", package: "console-kit"),
             "TransferKit",
             "Utils"
@@ -60,7 +60,7 @@ let package = Package(
         .target(name: "TransferKit", dependencies: [
             .product(name: "Crypto",
                      package: "swift-crypto",
-                     condition: .when(platforms: [.linux]))
+                     condition: .when(platforms: [.linux, .windows]))
         ], plugins: [
             .plugin(name: "OrzSwiftLintBuildToolPlugin", package: "OrzSwiftLint")
         ]),
