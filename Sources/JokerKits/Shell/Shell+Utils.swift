@@ -43,7 +43,12 @@ public extension Shell {
     static func exist(of pid: String) async -> Bool {
         #if os(Windows)
         // `tasklist` 找不到 PID 时退出码仍是 0，要查输出里是否含该 PID。
-        guard let output = try? run(path: "tasklist.exe", args: ["/FI", "PID eq \(pid)", "/NH"]) else {
+        // 注意：`run` 有多个重载（`-> String` / `-> Process` / async `-> Bool`），
+        // 必须显式标注类型，否则在 async 上下文里会选中 Bool 重载。
+        let output: String
+        do {
+            output = try run(path: "tasklist.exe", args: ["/FI", "PID eq \(pid)", "/NH"])
+        } catch {
             return false
         }
         return output.contains(pid)
