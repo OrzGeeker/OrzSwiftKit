@@ -83,7 +83,12 @@ struct OracleJDKScriptFriendlyURLs {
     }
 }
 
+// Apple 平台用 CryptoKit；其它平台用 swift-crypto 的 `Crypto`（决策 D8：跨平台）。
+#if canImport(CryptoKit)
 import CryptoKit
+#elseif canImport(Crypto)
+import Crypto
+#endif
 import TransferKit
 extension OracleJDKScriptFriendlyURLs {
     
