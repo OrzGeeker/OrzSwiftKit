@@ -1,5 +1,10 @@
 import Foundation
 
+// Linux/Windows 把 URLSession/URLRequest 放在 FoundationNetworking（决策 D8：跨平台）。
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// 下载基础设施（对齐 `docs/spec/behavior.md` B2/B8）。
 ///
 /// - HTTP 走可注入的 `TransferTransport`（生产 `URLSession`，测试可离线替身）；
