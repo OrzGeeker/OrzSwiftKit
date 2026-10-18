@@ -5,7 +5,9 @@
 //  Created by joker on 2022/1/5.
 //
 
-#if os(macOS)
+// `Shell` 本体只用 `Process` + `/bin`、`/usr/bin` 里的系统工具（`env/ps/pgrep/kill`），
+// Linux 同样具备；Windows 没有这些路径与工具，故仍排除（决策 D8：跨平台）。
+#if !os(Windows)
 import Foundation
 
 public struct Shell {
