@@ -5,13 +5,19 @@
 //  Created by joker on 2022/1/5.
 //
 
-// `Shell` 本体只用 `Process` + `/bin`、`/usr/bin` 里的系统工具（`env/ps/pgrep/kill`），
-// Linux 同样具备；Windows 没有这些路径与工具，故仍排除（决策 D8：跨平台）。
-#if !os(Windows)
+// `Shell` 本体只用 `Process`；POSIX 平台借 `/bin`、`/usr/bin` 里的系统工具
+// （`env/ps/pgrep/kill`），Windows 对应 `cmd/tasklist/taskkill/powershell`（D14 跨平台）。
 import Foundation
 
 public struct Shell {
 
+    #if os(Windows)
+    /// Windows 没有 `env`：走 `cmd.exe /c`。
+    static let envPath = "cmd.exe"
+
+    /// `cmd.exe /c` 需要的参数前缀（`runCommand` 用）。
+    static let commandPrefix = ["/c"]
+    #else
     enum Executable: String, CaseIterable {
         case env
         case bash
@@ -26,19 +32,27 @@ public struct Shell {
 
     static let envPath = Executable.env.userBinPath
 
+    static let commandPrefix: [String] = []
+    #endif
+
     @discardableResult
     public static func runCommand(with args: [String], workDirectory: String? = nil) throws -> String {
-        return try self.run(path: envPath, args: args, workDirectory: workDirectory)
+        return try self.run(path: envPath, args: commandPrefix + args, workDirectory: workDirectory)
     }
     
     @discardableResult
     public static func runCommand(with args: [String], workDirectory: String? = nil, terminationHandler: (@Sendable (Process) -> Void)? = nil) throws -> Process {
-        return try self.run(path: envPath, args: args, workDirectory: workDirectory, terminationHandler: terminationHandler)
+        return try self.run(
+            path: envPath,
+            args: commandPrefix + args,
+            workDirectory: workDirectory,
+            terminationHandler: terminationHandler
+        )
     }
     
     @discardableResult
     public static func runCommand(with args: [String], workDirectory: String? = nil) async -> Bool {
-        return await self.run(path: envPath, args: args, workDirectory: workDirectory)
+        return await self.run(path: envPath, args: commandPrefix + args, workDirectory: workDirectory)
     }
 }
 
@@ -128,5 +142,3 @@ extension Shell {
         })
     }
 }
-
-#endif

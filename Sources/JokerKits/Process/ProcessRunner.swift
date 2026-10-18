@@ -66,7 +66,12 @@ public final class ManagedProcess: @unchecked Sendable {
         process.terminate()  // SIGTERM
         if await wait(timeout: policy.terminateTimeout) { return }
 
+        #if os(Windows)
+        // Windows 没有 POSIX 信号：`terminate()` 走 TerminateProcess，本身就是硬终止。
+        process.terminate()
+        #else
         kill(process.processIdentifier, SIGKILL)
+        #endif
         _ = await wait(timeout: 5)
     }
 
