@@ -25,7 +25,7 @@ let package = Package(
         // 统一 lint 配置：build-tool 插件，**每次构建自动跑**（本地/CI 都能及时暴露）。
         // 0.0.7 起 OrzSwiftLint 改用 SwiftLint 官方**预编译二进制**（artifactbundle），
         // 插件照跑但不再编译 swift-syntax（下游冷编 554s→~几十秒、缓存 ~3GiB→几百MB）。
-        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.8"),
+        .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.10"),
     ],
     targets: [
         .target(name: "SwiftUIX", dependencies: [
