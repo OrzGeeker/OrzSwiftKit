@@ -99,6 +99,53 @@ public final class ManagedProcess: @unchecked Sendable {
         _ = await wait(timeout: 5)
     }
 
+    /// 等退出，最多 `timeout` 秒；返回是否**已退出**。
+    ///
+    /// 前端用它实现"停止/重启"里的等待（`stop()` 之后确认进程真的没了再启动）。
+    public func waitForExit(timeout: TimeInterval) async -> Bool {
+        await wait(timeout: timeout)
+    }
+
+    /// 强制终止：`SIGTERM` → 等 `terminateTimeout` → `SIGKILL`。
+    ///
+    /// 服务端管理里的「**终止**」用它：立刻要进程消失（玩家会被直接断开、世界可能来不及保存），
+    /// 与「停止」（先送 `stop` 命令让服务端自己优雅退出，见 `stop()`）区分开。
+    public func terminate() async {
+        guard process.isRunning else { return }
+        process.terminate()  // SIGTERM
+        if await wait(timeout: policy.terminateTimeout) { return }
+        #if os(Windows)
+        process.terminate()
+        #else
+        Self.signal(SIGKILL, to: process.processIdentifier)
+        #endif
+        _ = await wait(timeout: 5)
+    }
+
+    /// 更狠：直接 `SIGKILL`，不给服务端任何保存时间（进程卡死、`terminate()` 也没反应时用）。
+    ///
+    /// 起名 `forceKill()` 是为了不和全局 `kill(2)` 撞名（在同一类型里会被解析成实例方法）。
+    public func forceKill() async {
+        guard process.isRunning else { return }
+        #if os(Windows)
+        process.terminate()
+        #else
+        Self.signal(SIGKILL, to: process.processIdentifier)
+        #endif
+        _ = await wait(timeout: 5)
+    }
+
+    #if !os(Windows)
+    /// `kill(2)` 包一层：本类型里的方法名会和全局函数抢解析。
+    private static func signal(_ sig: Int32, to pid: Int32) {
+        #if canImport(Darwin)
+        _ = Darwin.kill(pid, sig)
+        #else
+        _ = Glibc.kill(pid, sig)
+        #endif
+    }
+    #endif
+
     private func wait(timeout: TimeInterval) async -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         while process.isRunning && Date() < deadline {

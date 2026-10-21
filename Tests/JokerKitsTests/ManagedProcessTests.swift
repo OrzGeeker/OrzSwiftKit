@@ -98,3 +98,36 @@ final class ManagedProcessStandardInputTests: XCTestCase {
     }
     #endif
 }
+
+/// 生命周期强制终止：`terminate()`（SIGTERM）与 `kill()`（SIGKILL），以及带超时的等待。
+final class ManagedProcessTerminationTests: XCTestCase {
+    #if !os(Windows)
+    func testTerminateStopsLongRunningChild() async throws {
+        // 一个不理 SIGTERM 的普通子进程仍会被 SIGTERM 结束（默认处置）。
+        let process = try ProcessRunner.run(executable: "/bin/sh", args: ["-c", "sleep 30"])
+        XCTAssertTrue(process.isRunning)
+        await process.terminate()
+        XCTAssertFalse(process.isRunning, "terminate() 之后进程应已退出")
+    }
+
+    func testKillStopsChildIgnoringTerminate() async throws {
+        // `trap '' TERM` → SIGTERM 被忽略，只有 SIGKILL 能停。
+        let process = try ProcessRunner.run(
+            executable: "/bin/sh",
+            args: ["-c", "trap '' TERM; sleep 30"]
+        )
+        try await Task.sleep(nanoseconds: 300_000_000)
+        await process.forceKill()
+        XCTAssertFalse(process.isRunning, "kill() 用 SIGKILL，忽略 SIGTERM 的进程也应退出")
+    }
+
+    func testWaitForExitTimeoutReturnsFalseWhileRunning() async throws {
+        let process = try ProcessRunner.run(executable: "/bin/sh", args: ["-c", "sleep 30"])
+        let exited = await process.waitForExit(timeout: 0.3)
+        XCTAssertFalse(exited, "0.3s 内不会退出 → false")
+        await process.forceKill()
+        let exitedAfterKill = await process.waitForExit(timeout: 5)
+        XCTAssertTrue(exitedAfterKill)
+    }
+    #endif
+}
