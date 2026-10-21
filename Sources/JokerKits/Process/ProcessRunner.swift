@@ -40,6 +40,24 @@ public final class ManagedProcess: @unchecked Sendable {
     public var isRunning: Bool { process.isRunning }
     public var processIdentifier: Int32 { process.processIdentifier }
 
+    /// 往子进程 stdin 送一行命令（自动补 `\n`）。
+    ///
+    /// 服务端控制台的前端（GUI）用它把用户输入的命令送进服务端：
+    /// `stop` / `say hello` / `op someone` 都走这里。CLI 侧不需要（终端本身就是 stdin）。
+    ///
+    /// - Returns: 是否写入成功（进程已退出 / stdin 已关闭 / 写失败 → `false`，不抛）。
+    @discardableResult
+    public func send(_ command: String) -> Bool {
+        guard process.isRunning, let stdin else { return false }
+        let line = command.hasSuffix("\n") ? command : command + "\n"
+        do {
+            try stdin.write(contentsOf: Data(line.utf8))
+            return true
+        } catch {
+            return false
+        }
+    }
+
     /// 等待退出并返回归一化退出码。
     public func waitForExit() async -> Int32 {
         await withCheckedContinuation { continuation in
