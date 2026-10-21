@@ -73,3 +73,28 @@ private final class LineCollector: @unchecked Sendable {
         return buffer
     }
 }
+
+/// `inheritStandardInput`：CLI 让子进程继承终端 stdin（GUI 不用，走 `send`）。
+final class ManagedProcessStandardInputTests: XCTestCase {
+    #if !os(Windows)
+    func testPipeModeCanSendCommands() throws {
+        let process = try ProcessRunner.run(executable: "/bin/sh", args: ["-c", "cat"])
+        defer { Task { await process.stop() } }
+        XCTAssertTrue(process.canSendCommands)
+        XCTAssertTrue(process.send("hi"))
+        _ = process
+    }
+
+    func testInheritModeDoesNotExposeSend() async throws {
+        // 继承终端 stdin 时没有我们自己的管道 → 不该假装能 send（否则会和终端抢输入）。
+        let process = try ProcessRunner.run(
+            executable: "/bin/sh",
+            args: ["-c", "sleep 1"],
+            inheritStandardInput: true
+        )
+        XCTAssertFalse(process.canSendCommands)
+        XCTAssertFalse(process.send("hi"))
+        _ = await process.waitForExit()   // 让它自然退出，避免悬挂
+    }
+    #endif
+}

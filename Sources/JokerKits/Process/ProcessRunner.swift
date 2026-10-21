@@ -31,6 +31,12 @@ public final class ManagedProcess: @unchecked Sendable {
     private let stdin: FileHandle?
     private let policy: Policy
 
+    /// 是否可以用 `send(_:)` 往子进程 stdin 写命令。
+    ///
+    /// `false` 表示子进程**直接继承了父进程的 stdin**（终端场景：用户在终端里打字，
+    /// 由终端把输入交给子进程，前端不需要也不该再写管道）。
+    public var canSendCommands: Bool { stdin != nil }
+
     init(process: Process, stdin: FileHandle?, policy: Policy) {
         self.process = process
         self.stdin = stdin
@@ -111,14 +117,20 @@ public final class ManagedProcess: @unchecked Sendable {
 public enum ProcessRunner {
     /// 启动子进程并返回受管句柄。
     ///
-    /// - Parameter onLine: 提供时把子进程 stdout/stderr 逐块回调（用于透传服务端日志）。
+    /// - Parameters:
+    ///   - onLine: 提供时把子进程 stdout/stderr 逐块回调（用于透传服务端日志）。
+    ///   - inheritStandardInput: **让子进程直接继承父进程的 stdin**（终端场景）。
+    ///     CLI 启动服务端时用它：用户在终端里打字，输入直达服务端控制台
+    ///     （与 Python 侧 `subprocess.Popen` 不传 `stdin=` 的语义一致）。
+    ///     GUI 不要开——GUI 用 `ManagedProcess.send(_:)` 显式写管道。
     @discardableResult
     public static func run(
         executable: String,
         args: [String],
         workDirectory: String? = nil,
         policy: ManagedProcess.Policy = .standard,
-        onLine: (@Sendable (String) -> Void)? = nil
+        onLine: (@Sendable (String) -> Void)? = nil,
+        inheritStandardInput: Bool = false
     ) throws -> ManagedProcess {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
@@ -127,8 +139,15 @@ public enum ProcessRunner {
             process.currentDirectoryURL = URL(fileURLWithPath: workDirectory)
         }
 
-        let input = Pipe()
-        process.standardInput = input
+        var pipeInput: Pipe?
+        if inheritStandardInput {
+            // 直接继承终端 stdin：用户在终端输入的命令由终端交给子进程。
+            process.standardInput = FileHandle.standardInput
+        } else {
+            let input = Pipe()
+            process.standardInput = input
+            pipeInput = input
+        }
 
         if let onLine {
             let output = Pipe()
@@ -142,6 +161,10 @@ public enum ProcessRunner {
         }
 
         try process.run()
-        return ManagedProcess(process: process, stdin: input.fileHandleForWriting, policy: policy)
+        return ManagedProcess(
+            process: process,
+            stdin: pipeInput?.fileHandleForWriting,
+            policy: policy
+        )
     }
 }
