@@ -10,6 +10,8 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
+        .library(name: "ConsoleCore", targets: ["ConsoleCore"]),
+        .library(name: "ConsoleUI", targets: ["ConsoleUI"]),
         .library(name: "SwiftUIX", targets: ["SwiftUIX"]),
         .library(name: "JokerKits", targets: ["JokerKits"]),
         .library(name: "Utils", targets: ["Utils"]),
@@ -28,6 +30,9 @@ let package = Package(
         .package(url: "https://github.com/OrzGeeker/OrzSwiftLint.git", from: "0.0.10"),
     ],
     targets: [
+        .target(name: "ConsoleCore"),
+        .testTarget(name: "ConsoleCoreTests", dependencies: ["ConsoleCore"]),
+        .target(name: "ConsoleUI", dependencies: ["ConsoleCore"]),
         .target(name: "SwiftUIX", dependencies: [
             "Utils",
             .product(name: "WebView", package: "swiftui-webview")
